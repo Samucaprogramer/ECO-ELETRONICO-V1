@@ -7,6 +7,20 @@ from datetime import datetime
 import random
 import json
 import os
+import firebase_admin
+from firebase_admin import credentials, firestore
+
+@st.cache_resource
+def init_firebase():
+    key_dict = json.loads(st.secrets["firebase"]["key"])
+    cred = credentials.Certificate(key_dict)
+
+    if not firebase_admin._apps:
+        firebase_admin.initialize_app(cred)
+
+    return firestore.client()
+
+db = init_firebase()
 
 # Arquivos JSON
 USERS_FILE = "db_usuarios.json"
