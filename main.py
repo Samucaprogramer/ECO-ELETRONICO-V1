@@ -5,41 +5,24 @@
 import streamlit as st
 from datetime import datetime
 import random
-import json
-import firebase_admin
-from firebase_admin import credentials, db
-
 # ========================================
 # CONFIGURAÇÃO DO FIREBASE
 # ========================================
 
-@st.cache_resource
-def init_firebase():
-    """Inicializa Firebase (funciona local E no Streamlit Cloud)"""
-    if not firebase_admin._apps:
-        try:
-            # MODO 1: Streamlit Cloud (usando secrets)
-            if "firebase" in st.secrets:
-                key_dict = dict(st.secrets["firebase"]["key"])
-                cred = credentials.Certificate(key_dict)
-                database_url = st.secrets["firebase"]["database_url"]
-            
-            # MODO 2: Local (usando arquivo)
-            else:
-                cred = credentials.Certificate('firebase-credentials.json')
-                database_url = 'https://SEU-PROJETO-default-rtdb.firebaseio.com'
-            
-            firebase_admin.initialize_app(cred, {
-                'databaseURL': database_url
-            })
-            return db.reference()
-        
-        except Exception as e:
-            st.error(f"❌ Erro Firebase: {e}")
-            return None
-    return db.reference()
+import json
+import firebase_admin
+from firebase_admin import credentials, firestore
 
-firebase_db = init_firebase()
+
+# Lê o JSON salvo no secrets
+service_account_info = json.loads(st.secrets["FIREBASE"]["service_account"])
+
+# Inicializa o Firebase
+if not firebase_admin._apps:
+    cred = credentials.Certificate(service_account_info)
+    firebase_admin.initialize_app(cred)
+
+db = firestore.client()
 
 # ========================================
 # FUNÇÕES DE BANCO DE DADOS
