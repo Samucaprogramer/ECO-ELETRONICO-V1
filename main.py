@@ -1,90 +1,136 @@
-# main.py - Eco Eletrônico COMPLETO com Firebase
+# main.py - Eco Eletrônico com FIRESTORE (Melhor Performance!)
 # Requisitos: pip install streamlit firebase-admin
 # Rode: streamlit run main.py
 
 import streamlit as st
 from datetime import datetime
 import random
-# ========================================
-# CONFIGURAÇÃO DO FIREBASE
-# ========================================
-
 import json
 import firebase_admin
 from firebase_admin import credentials, firestore
 
-# Lê o JSON salvo no secrets
-service_account = json.loads(st.secrets["FIREBASE"]["service_account"])
+# ========================================
+# CONFIGURAÇÃO DO FIRESTORE
+# ========================================
 
-# Inicializa o Firebase
-if not firebase_admin._apps:
-    cred = credentials.Certificate(service_account)
-    firebase_admin.initialize_app(cred)
+@st.cache_resource
+def init_firestore():
+    """Inicializa Firestore (funciona local E no Streamlit Cloud)"""
+    if not firebase_admin._apps:
+        try:
+            # MODO 1: Streamlit Cloud (usando secrets)
+            if "firebase" in st.secrets:
+                key_dict = dict(st.secrets["firebase"]["key"])
+                cred = credentials.Certificate(key_dict)
+            
+            # MODO 2: Local (usando arquivo)
+            else:
+                cred = credentials.Certificate('firebase-credentials.json')
+            
+            firebase_admin.initialize_app(cred)
+            return firestore.client()
+        
+        except Exception as e:
+            st.error(f"❌ Erro Firestore: {e}")
+            return None
+    return firestore.client()
 
-db = firestore.client()
-
+db = init_firestore()
 
 # ========================================
-# FUNÇÕES DE BANCO DE DADOS
+# FUNÇÕES DE BANCO DE DADOS (FIRESTORE)
 # ========================================
 
 def criar_usuario(nome, turma):
-    if not firebase_db:
+    """Cria novo usuário no Firestore"""
+    if not db:
         return None
+    
     user_id = int(datetime.now().timestamp() * 1000)
+    
     dados = {
         'id': user_id,
         'nome': nome,
         'turma': turma,
         'pontos': 0.0,
         'categoriasCompradas': [],
-        'dataCadastro': datetime.now().strftime('%d/%m/%Y %H:%M')
+        'dataCadastro': datetime.now()
     }
-    firebase_db.child('usuarios').child(str(user_id)).set(dados)
+    
+    # Salva no Firestore
+    db.collection('usuarios').document(str(user_id)).set(dados)
     return user_id
 
 def buscar_usuario(nome, turma):
-    if not firebase_db:
+    """Busca usuário por nome e turma"""
+    if not db:
         return None
-    usuarios = firebase_db.child('usuarios').get()
-    if usuarios:
-        for user_id, dados in usuarios.items():
-            if dados.get('nome') == nome and dados.get('turma') == turma:
-                return dados
+    
+    # Query no Firestore
+    usuarios_ref = db.collection('usuarios')
+    query = usuarios_ref.where('nome', '==', nome).where('turma', '==', turma).limit(1)
+    results = query.stream()
+    
+    for doc in results:
+        data = doc.to_dict()
+        # Converter Timestamp para string
+        if 'dataCadastro' in data and hasattr(data['dataCadastro'], 'strftime'):
+            data['dataCadastro'] = data['dataCadastro'].strftime('%d/%m/%Y %H:%M')
+        return data
+    
     return None
 
 def load_usuarios():
-    if not firebase_db:
+    """Carrega todos os usuários"""
+    if not db:
         return []
-    usuarios = firebase_db.child('usuarios').get()
-    if usuarios:
-        return list(usuarios.values())
-    return []
+    
+    usuarios = []
+    docs = db.collection('usuarios').stream()
+    
+    for doc in docs:
+        data = doc.to_dict()
+        # Converter Timestamp para string
+        if 'dataCadastro' in data and hasattr(data['dataCadastro'], 'strftime'):
+            data['dataCadastro'] = data['dataCadastro'].strftime('%d/%m/%Y %H:%M')
+        usuarios.append(data)
+    
+    return usuarios
 
 def atualizar_pontos(user_id, pontos_adicionar):
-    if not firebase_db:
+    """Atualiza pontos do usuário"""
+    if not db:
         return
-    user_ref = firebase_db.child('usuarios').child(str(user_id))
-    user = user_ref.get()
-    if user:
-        novos_pontos = user.get('pontos', 0) + pontos_adicionar
+    
+    user_ref = db.collection('usuarios').document(str(user_id))
+    user_doc = user_ref.get()
+    
+    if user_doc.exists:
+        pontos_atuais = user_doc.to_dict().get('pontos', 0)
+        novos_pontos = pontos_atuais + pontos_adicionar
         user_ref.update({'pontos': novos_pontos})
 
 def adicionar_categoria_comprada(user_id, categoria):
-    if not firebase_db:
+    """Adiciona categoria comprada"""
+    if not db:
         return
-    user_ref = firebase_db.child('usuarios').child(str(user_id))
-    user = user_ref.get()
-    if user:
-        categorias = user.get('categoriasCompradas', [])
+    
+    user_ref = db.collection('usuarios').document(str(user_id))
+    user_doc = user_ref.get()
+    
+    if user_doc.exists:
+        categorias = user_doc.to_dict().get('categoriasCompradas', [])
         if categoria not in categorias:
             categorias.append(categoria)
             user_ref.update({'categoriasCompradas': categorias})
 
 def criar_descarte(usuario_id, numero, linha, material, quantidade, pontos, customizado=False):
-    if not firebase_db:
+    """Cria novo descarte no Firestore"""
+    if not db:
         return
+    
     descarte_id = int(datetime.now().timestamp() * 1000)
+    
     dados = {
         'id': descarte_id,
         'usuarioId': usuario_id,
@@ -95,27 +141,42 @@ def criar_descarte(usuario_id, numero, linha, material, quantidade, pontos, cust
         'pontos': pontos,
         'status': 'Pendente',
         'customizado': customizado,
-        'data': datetime.now().strftime('%d/%m/%Y %H:%M')
+        'data': datetime.now()
     }
-    firebase_db.child('descartes').child(str(descarte_id)).set(dados)
+    
+    db.collection('descartes').document(str(descarte_id)).set(dados)
 
 def load_descartes():
-    if not firebase_db:
+    """Carrega todos os descartes"""
+    if not db:
         return []
-    descartes = firebase_db.child('descartes').get()
-    if descartes:
-        return list(descartes.values())
-    return []
+    
+    descartes = []
+    docs = db.collection('descartes').stream()
+    
+    for doc in docs:
+        data = doc.to_dict()
+        # Converter Timestamp para string
+        if 'data' in data and hasattr(data['data'], 'strftime'):
+            data['data'] = data['data'].strftime('%d/%m/%Y %H:%M')
+        descartes.append(data)
+    
+    return descartes
 
 def atualizar_status_descarte(descarte_id, status):
-    if not firebase_db:
+    """Atualiza status do descarte"""
+    if not db:
         return
-    firebase_db.child('descartes').child(str(descarte_id)).update({'status': status})
+    
+    db.collection('descartes').document(str(descarte_id)).update({'status': status})
 
 def criar_resgate(usuario_id, categoria, cupom, codigo, pontos):
-    if not firebase_db:
+    """Cria novo resgate no Firestore"""
+    if not db:
         return
+    
     resgate_id = int(datetime.now().timestamp() * 1000)
+    
     dados = {
         'id': resgate_id,
         'usuarioId': usuario_id,
@@ -124,24 +185,37 @@ def criar_resgate(usuario_id, categoria, cupom, codigo, pontos):
         'codigo': codigo,
         'pontos': pontos,
         'status': 'Pendente',
-        'data': datetime.now().strftime('%d/%m/%Y %H:%M')
+        'data': datetime.now()
     }
-    firebase_db.child('resgates').child(str(resgate_id)).set(dados)
+    
+    db.collection('resgates').document(str(resgate_id)).set(dados)
 
 def load_resgates():
-    if not firebase_db:
+    """Carrega todos os resgates"""
+    if not db:
         return []
-    resgates = firebase_db.child('resgates').get()
-    if resgates:
-        return list(resgates.values())
-    return []
+    
+    resgates = []
+    docs = db.collection('resgates').stream()
+    
+    for doc in docs:
+        data = doc.to_dict()
+        # Converter Timestamp para string
+        if 'data' in data and hasattr(data['data'], 'strftime'):
+            data['data'] = data['data'].strftime('%d/%m/%Y %H:%M')
+        resgates.append(data)
+    
+    return resgates
 
 def atualizar_status_resgate(resgate_id, status):
-    if not firebase_db:
+    """Atualiza status do resgate"""
+    if not db:
         return
-    firebase_db.child('resgates').child(str(resgate_id)).update({'status': status})
+    
+    db.collection('resgates').document(str(resgate_id)).update({'status': status})
 
 def exportar_backup():
+    """Exporta backup completo"""
     backup = {
         'usuarios': load_usuarios(),
         'descartes': load_descartes(),
@@ -205,21 +279,21 @@ if 'user' not in st.session_state:
 def home_screen():
     st.markdown("<h1>♻️ Eco Eletrônico - FECTI 2024</h1>", unsafe_allow_html=True)
     
-    if not firebase_db:
-        st.error("❌ Firebase não configurado!")
-        st.info("Configure os Secrets no Streamlit Cloud com suas credenciais Firebase")
+    if not db:
+        st.error("❌ Firestore não configurado!")
+        st.info("Configure as credenciais do Firebase")
         return
     
     st.markdown("""<div style='text-align: center; padding: 40px;'>
-        <h2 style='color: #ffffff;'>🔥 Dados na Nuvem Google!</h2>
+        <h2 style='color: #ffffff;'>🔥 Dados no Firestore (Google Cloud)!</h2>
         <p style='font-size: 1.2em; color: #ffffff;'>📱 Traga eletrônicos | ⭐ Ganhe pontos | 🎁 Troque por cupons</p>
     </div>""", unsafe_allow_html=True)
     
     try:
         usuarios = load_usuarios()
-        st.success(f"✅ Firebase conectado! 👥 {len(usuarios)} alunos")
-    except:
-        st.warning("⚠️ Carregando...")
+        st.success(f"✅ Firestore conectado! 👥 {len(usuarios)} alunos cadastrados")
+    except Exception as e:
+        st.warning(f"⚠️ Carregando... {str(e)}")
     
     col1, col2, col3 = st.columns(3)
     with col1:
@@ -248,7 +322,7 @@ def cadastro_screen():
             elif buscar_usuario(nome.strip(), turma):
                 st.error("❌ Usuário já existe!")
             else:
-                with st.spinner("💾 Salvando..."):
+                with st.spinner("💾 Salvando no Firestore..."):
                     criar_usuario(nome.strip(), turma)
                     st.session_state.user = buscar_usuario(nome.strip(), turma)
                 st.success("✅ Cadastrado!")
@@ -270,7 +344,7 @@ def login_screen():
             if not nome.strip() or turma == 'Selecione...':
                 st.error("❌ Preencha todos os campos!")
             else:
-                with st.spinner("🔍 Buscando..."):
+                with st.spinner("🔍 Buscando no Firestore..."):
                     user = buscar_usuario(nome.strip(), turma)
                     if user:
                         st.session_state.user = user
@@ -350,7 +424,7 @@ def cadastrar_eletro_screen():
                 if material_final and material_final.strip():
                     pts = pontos_final * qtd
                     numero = f"DSC-{int(datetime.now().timestamp() * 1000)}"
-                    with st.spinner("💾 Salvando..."):
+                    with st.spinner("💾 Salvando no Firestore..."):
                         criar_descarte(st.session_state.user['id'], numero, linha,
                                      material_final.strip(), qtd, pts, material_sel == '📝 Outro')
                     st.success(f"✅ {pts} pts (aguardando aprovação)")
