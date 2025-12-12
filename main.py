@@ -15,27 +15,42 @@ from firebase_admin import credentials, firestore
 
 @st.cache_resource
 def init_firestore():
-    """Inicializa Firestore (funciona local E no Streamlit Cloud)"""
+    """Inicializa Firestore (funciona local e no Streamlit Cloud)"""
     if not firebase_admin._apps:
         try:
-            # MODO 1: Streamlit Cloud (usando secrets)
-            if "firebase" in st.secrets:
-                key_dict = dict(st.secrets["firebase"]["key"])
+            # MODO: Streamlit Cloud (usando st.secrets)
+            if "FIREBASE" in st.secrets:  # <<<<<< CORRIGIDO!
+                fb = st.secrets["FIREBASE"]
+
+                # Criar dict do JSON de service account
+                key_dict = {
+                    "type": fb["type"],
+                    "project_id": fb["project_id"],
+                    "private_key_id": fb["private_key_id"],
+                    "private_key": fb["private_key"],
+                    "client_email": fb["client_email"],
+                    "client_id": fb["client_id"],
+                    "auth_uri": fb["auth_uri"],
+                    "token_uri": fb["token_uri"],
+                    "auth_provider_x509_cert_url": fb["auth_provider_x509_cert_url"],
+                    "client_x509_cert_url": fb["client_x509_cert_url"]
+                }
+
                 cred = credentials.Certificate(key_dict)
-            
-            # MODO 2: Local (usando arquivo)
+
             else:
-                cred = credentials.Certificate('firebase-credentials.json')
-            
+                # MODO: local
+                cred = credentials.Certificate("firebase-credentials.json")
+
             firebase_admin.initialize_app(cred)
             return firestore.client()
-        
+
         except Exception as e:
             st.error(f"❌ Erro Firestore: {e}")
             return None
-    return firestore.client()
 
-db = init_firestore()
+    return firestore.client()
+            
 
 # ========================================
 # FUNÇÕES DE BANCO DE DADOS (FIRESTORE)
