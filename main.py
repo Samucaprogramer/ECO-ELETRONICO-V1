@@ -19,10 +19,9 @@ def init_firestore():
     if not firebase_admin._apps:
         try:
             # MODO: Streamlit Cloud (usando st.secrets)
-            if "FIREBASE" in st.secrets:  # <<<<<< CORRIGIDO!
+            if "FIREBASE" in st.secrets:
                 fb = st.secrets["FIREBASE"]
 
-                # Criar dict do JSON de service account
                 key_dict = {
                     "type": fb["type"],
                     "project_id": fb["project_id"],
@@ -36,10 +35,18 @@ def init_firestore():
                     "client_x509_cert_url": fb["client_x509_cert_url"]
                 }
 
-                cred = credentials.Certificate(key_dict)
+                import tempfile
+                import json
+
+                # Criar arquivo .json temporário
+                temp = tempfile.NamedTemporaryFile(delete=False, suffix=".json")
+                temp.write(json.dumps(key_dict).encode())
+                temp.close()
+
+                cred = credentials.Certificate(temp.name)
 
             else:
-                # MODO: local
+                # MODO local
                 cred = credentials.Certificate("firebase-credentials.json")
 
             firebase_admin.initialize_app(cred)
@@ -50,6 +57,7 @@ def init_firestore():
             return None
 
     return firestore.client()
+
             
 
 # ========================================
