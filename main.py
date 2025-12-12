@@ -57,8 +57,10 @@ def init_firestore():
             return None
 
     return firestore.client()
+    
+db = init_firestore()
 
-            
+
 
 # ========================================
 # FUNÇÕES DE BANCO DE DADOS (FIRESTORE)
@@ -538,109 +540,81 @@ def admin_screen():
     if st.button("🚪 Sair"):
         st.session_state.screen = 'home'
         st.rerun()
-    
+
     usuarios = load_usuarios()
     descartes = load_descartes()
     resgates = load_resgates()
-    
+
     col1, col2, col3, col4 = st.columns(4)
     with col1:
         st.markdown(f"<div class='stat-card'><p>Usuários</p><h1>{len(usuarios)}</h1></div>", unsafe_allow_html=True)
     with col2:
         st.markdown(f"<div class='stat-card'><p>Descartes</p><h1>{len(descartes)}</h1></div>", unsafe_allow_html=True)
     with col3:
-        aprovados = len([d for d in descartes if d['status'] == 'Aprovado'])
-        st.markdown(f"<div class='stat-card'><p>Aprovados</p><h1>{aprovados}</h1></div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='stat-card'><p>Resgates</p><h1>{len(resgates)}</h1></div>", unsafe_allow_html=True)
     with col4:
-        pend = len([r for r in resgates if r['status'] == 'Pendente'])
-        st.markdown(f"<div class='stat-card'><p>Cupons Pend.</p><h1>{pend}</h1></div>", unsafe_allow_html=True)
-    
-    st.markdown("### 💾 Backup")
-    if st.button("📥 Exportar JSON", use_container_width=True):
-        backup = exportar_backup()
-        st.download_button("💾 Download", backup,
-            f"backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json", "application/json")
-    
-    st.markdown("### ⏳ Descartes Pendentes")
-    descartes_pend = [d for d in descartes if d['status'] == 'Pendente']
-    
-    if descartes_pend:
-        for d in descartes_pend:
-            user = next((u for u in usuarios if u['id'] == d['usuarioId']), None)
-            col1, col2, col3 = st.columns([4, 1, 1])
-            with col1:
-                st.markdown(f"""<div class='card-wait'>
-                    <b>{d['numero']}</b> | {user['nome'] if user else 'N/A'} ({user['turma'] if user else 'N/A'})<br>
-                    {d['linha']} | {d['material']} ({d['quantidade']} un) | {d['pontos']} pts
-                    </div>""", unsafe_allow_html=True)
-            with col2:
-                if st.button("✅", key=f"a{d['id']}", use_container_width=True):
-                    atualizar_status_descarte(d['id'], 'Aprovado')
-                    atualizar_pontos(d['usuarioId'], d['pontos'])
-                    st.rerun()
-            with col3:
-                if st.button("❌", key=f"r{d['id']}", use_container_width=True):
-                    atualizar_status_descarte(d['id'], 'Recusado')
-                    st.rerun()
-    else:
-        st.info("Nenhum descarte pendente")
-    
-    st.markdown("### 🎫 Cupons Pendentes")
-    cupons_pend = [r for r in resgates if r['status'] == 'Pendente']
-    
-    if cupons_pend:
-        for r in cupons_pend:
-            user = next((u for u in usuarios if u['id'] == r['usuarioId']), None)
-            col1, col2, col3 = st.columns([3, 1, 1])
-            with col1:
-                st.markdown(f"""<div class='card-wait'>
-                    <b>{r['codigo']}</b> | {user['nome'] if user else 'N/A'} ({user['turma'] if user else 'N/A'})<br>
-                    {r['categoria']} - {r['cupom']} ({r['pontos']} pts)
-                    </div>""", unsafe_allow_html=True)
-            with col2:
-                if st.button("✅", key=f"ac{r['id']}", use_container_width=True):
-                    atualizar_status_resgate(r['id'], 'Aprovado')
-                    st.rerun()
-            with col3:
-                if st.button("❌", key=f"rc{r['id']}", use_container_width=True):
-                    atualizar_status_resgate(r['id'], 'Recusado')
-                    atualizar_pontos(r['usuarioId'], r['pontos'])
-                    st.rerun()
-    else:
-        st.info("Nenhum cupom pendente")
+        if st.download_button("📥 Backup", exportar_backup(), "backup.json"):
+            st.success("Backup gerado!")
 
-# ========================================
-# MAIN
-# ========================================
+    st.markdown("## 🟦 Aprovar / Recusar Descates")
+    for d in descartes:
+        col1, col2, col3 = st.columns([4, 1, 1])
+        with col1:
+            st.markdown(
+                f"<div class='card-wait'><b>{d['numero']}</b> - {d['material']} "
+                f"({d['quantidade']} un) — {d['pontos']} pts<br>"
+                f"<small>{d['data']}</small></div>",
+                unsafe_allow_html=True
+            )
+        with col2:
+            if st.button("Aprovar", key=f"ap_{d['id']}"):
+                atualizar_status_descarte(d['id'], "Aprovado")
+                atualizar_pontos(d['usuarioId'], d['pontos'])
+                st.rerun()
+        with col3:
+            if st.button("Recusar", key=f"rec_{d['id']}"):
+                atualizar_status_descarte(d['id'], "Recusado")
+                st.rerun()
+
+    st.markdown("## 🟦 Aprovar / Recusar Cupons")
+    for r in resgates:
+        col1, col2, col3 = st.columns([4, 1, 1])
+        with col1:
+            st.markdown(
+                f"<div class='card-wait'><b>{r['categoria']} — {r['cupom']}</b><br>"
+                f"Código: {r['codigo']}<br>"
+                f"<small>{r['data']}</small></div>",
+                unsafe_allow_html=True
+            )
+        with col2:
+            if st.button("Aprovar", key=f"ra_{r['id']}"):
+                atualizar_status_resgate(r['id'], "Aprovado")
+                st.rerun()
+        with col3:
+            if st.button("Recusar", key=f"rr_{r['id']}"):
+                atualizar_status_resgate(r['id'], "Recusado")
+                st.rerun()
+
+
+# =====================================================
+# FUNÇÃO PRINCIPAL
+# =====================================================
 
 def main():
-    screen = st.session_state.get('screen', 'home')
-    
-    if screen == 'home':
-        home_screen()
-    elif screen == 'cadastro':
-        cadastro_screen()
-    elif screen == 'login':
-        login_screen()
-    elif screen == 'dashboard':
-        if st.session_state.user:
-            dashboard_screen()
-        else:
-            st.session_state.screen = 'home'
-            st.rerun()
-    elif screen == 'cadastrar_eletro':
-        cadastrar_eletro_screen()
-    elif screen == 'cupons':
-        cupons_screen()
-    elif screen == 'resgates':
-        resgates_screen()
-    elif screen == 'admin_login':
-        admin_login_screen()
-    elif screen == 'admin':
-        admin_screen()
-    else:
-        st.session_state.screen = 'home'
-        st.rerun()
+    telas = {
+        'home': home_screen,
+        'cadastro': cadastro_screen,
+        'login': login_screen,
+        'dashboard': dashboard_screen,
+        'cadastrar_eletro': cadastrar_eletro_screen,
+        'cupons': cupons_screen,
+        'resgates': resgates_screen,
+        'admin_login': admin_login_screen,
+        'admin': admin_screen,
+    }
+
+    telas[st.session_state.screen]()
+
 
 if __name__ == "__main__":
     main()
