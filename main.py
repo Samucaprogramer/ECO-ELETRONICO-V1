@@ -20,31 +20,22 @@ def init_firestore():
         try:
             # MODO 1: Streamlit Cloud (usando secrets)
             if "firebase" in st.secrets:
-                key_data = st.secrets["firebase"]["key"]
-
-                # Se for string, tentar fazer parse do JSON
-                if isinstance(key_data, str):
-                    # Limpar possíveis espaços e quebras de linha
-                    key_data = key_data.strip()
-                    try:
-                        key_dict = json.loads(key_data)
-                    except json.JSONDecodeError as e:
-                        st.error(f"❌ Erro ao fazer parse do JSON: {e}")
-                        st.info("💡 Certifique-se que o JSON está em uma linha só, sem quebras")
-                        return None
-                # Se já for dict, usar direto
+                # OPÇÃO A: JSON completo como string
+                if isinstance(st.secrets["firebase"]["key"], str):
+                    key_dict = json.loads(st.secrets["firebase"]["key"])
+                # OPÇÃO B: Campos separados
                 else:
-                    key_dict = dict(key_data)
-
+                    key_dict = dict(st.secrets["firebase"]["key"])
+                
                 cred = credentials.Certificate(key_dict)
-
+            
             # MODO 2: Local (usando arquivo)
             else:
                 cred = credentials.Certificate('firebase-credentials.json')
-
+            
             firebase_admin.initialize_app(cred)
             return firestore.client()
-
+        
         except Exception as e:
             st.error(f"❌ Erro Firestore: {e}")
             return None
@@ -60,9 +51,9 @@ def criar_usuario(nome, turma):
     """Cria novo usuário no Firestore"""
     if not db:
         return None
-
+    
     user_id = int(datetime.now().timestamp() * 1000)
-
+    
     dados = {
         'id': user_id,
         'nome': nome,
@@ -75,7 +66,7 @@ def criar_usuario(nome, turma):
         },
         'dataCadastro': datetime.now()
     }
-
+    
     # Salva no Firestore
     db.collection('usuarios').document(str(user_id)).set(dados)
     return user_id
@@ -84,56 +75,56 @@ def buscar_usuario(nome, turma):
     """Busca usuário por nome e turma"""
     if not db:
         return None
-
+    
     # Query no Firestore
     usuarios_ref = db.collection('usuarios')
     query = usuarios_ref.where('nome', '==', nome).where('turma', '==', turma).limit(1)
     results = query.stream()
-
+    
     for doc in results:
         data = doc.to_dict()
         # Converter Timestamp para string
         if 'dataCadastro' in data and hasattr(data['dataCadastro'], 'strftime'):
             data['dataCadastro'] = data['dataCadastro'].strftime('%d/%m/%Y %H:%M')
-
+        
         # Garantir estrutura de trimestres
         if 'categoriasCompradas' not in data or not isinstance(data['categoriasCompradas'], dict):
             data['categoriasCompradas'] = {'1': [], '2': [], '3': []}
-
+        
         return data
-
+    
     return None
 
 def load_usuarios():
     """Carrega todos os usuários"""
     if not db:
         return []
-
+    
     usuarios = []
     docs = db.collection('usuarios').stream()
-
+    
     for doc in docs:
         data = doc.to_dict()
         # Converter Timestamp para string
         if 'dataCadastro' in data and hasattr(data['dataCadastro'], 'strftime'):
             data['dataCadastro'] = data['dataCadastro'].strftime('%d/%m/%Y %H:%M')
-
+        
         # Garantir estrutura de trimestres
         if 'categoriasCompradas' not in data or not isinstance(data['categoriasCompradas'], dict):
             data['categoriasCompradas'] = {'1': [], '2': [], '3': []}
-
+        
         usuarios.append(data)
-
+    
     return usuarios
 
 def atualizar_pontos(user_id, pontos_adicionar):
     """Atualiza pontos do usuário"""
     if not db:
         return
-
+    
     user_ref = db.collection('usuarios').document(str(user_id))
     user_doc = user_ref.get()
-
+    
     if user_doc.exists:
         pontos_atuais = user_doc.to_dict().get('pontos', 0)
         novos_pontos = pontos_atuais + pontos_adicionar
@@ -143,22 +134,22 @@ def adicionar_categoria_comprada(user_id, categoria, trimestre):
     """Adiciona categoria comprada no trimestre atual"""
     if not db:
         return
-
+    
     user_ref = db.collection('usuarios').document(str(user_id))
     user_doc = user_ref.get()
-
+    
     if user_doc.exists:
         data = user_doc.to_dict()
         categorias = data.get('categoriasCompradas', {'1': [], '2': [], '3': []})
-
+        
         # Garantir que é um dicionário
         if not isinstance(categorias, dict):
             categorias = {'1': [], '2': [], '3': []}
-
+        
         trimestre_str = str(trimestre)
         if trimestre_str not in categorias:
             categorias[trimestre_str] = []
-
+        
         if categoria not in categorias[trimestre_str]:
             categorias[trimestre_str].append(categoria)
             user_ref.update({'categoriasCompradas': categorias})
@@ -167,10 +158,10 @@ def get_trimestre_atual():
     """Obtém o trimestre atual"""
     if not db:
         return 1
-
+    
     config_ref = db.collection('config').document('sistema')
     config_doc = config_ref.get()
-
+    
     if config_doc.exists:
         return config_doc.to_dict().get('trimestreAtual', 1)
     else:
@@ -182,7 +173,7 @@ def set_trimestre_atual(trimestre):
     """Define o trimestre atual"""
     if not db:
         return
-
+    
     config_ref = db.collection('config').document('sistema')
     config_ref.set({'trimestreAtual': trimestre})
 
@@ -190,7 +181,7 @@ def salvar_snapshot_trimestre(trimestre, usuarios, descartes):
     """Salva snapshot do trimestre antes de resetar"""
     if not db:
         return
-
+    
     # Criar ranking do trimestre
     ranking = []
     for user in usuarios:
@@ -201,10 +192,10 @@ def salvar_snapshot_trimestre(trimestre, usuarios, descartes):
             'pontos': user['pontos'],
             'descartesAprovados': descartes_user
         })
-
+    
     # Ordenar por pontos
     ranking = sorted(ranking, key=lambda x: x['pontos'], reverse=True)
-
+    
     # Salvar snapshot
     snapshot_ref = db.collection('historico_trimestres').document(f'trimestre_{trimestre}')
     snapshot_ref.set({
@@ -220,10 +211,10 @@ def resetar_pontuacao_usuarios():
     """Reseta a pontuação de todos os usuários"""
     if not db:
         return
-
+    
     usuarios_ref = db.collection('usuarios')
     docs = usuarios_ref.stream()
-
+    
     for doc in docs:
         doc.reference.update({'pontos': 0.0})
 
@@ -231,10 +222,10 @@ def get_historico_trimestre(trimestre):
     """Obtém o histórico de um trimestre específico"""
     if not db:
         return None
-
+    
     snapshot_ref = db.collection('historico_trimestres').document(f'trimestre_{trimestre}')
     snapshot_doc = snapshot_ref.get()
-
+    
     if snapshot_doc.exists:
         data = snapshot_doc.to_dict()
         # Converter Timestamp para string
@@ -247,16 +238,16 @@ def get_todos_historicos():
     """Obtém todos os históricos de trimestres"""
     if not db:
         return []
-
+    
     historicos = []
     docs = db.collection('historico_trimestres').stream()
-
+    
     for doc in docs:
         data = doc.to_dict()
         if 'dataFechamento' in data and hasattr(data['dataFechamento'], 'strftime'):
             data['dataFechamento'] = data['dataFechamento'].strftime('%d/%m/%Y %H:%M')
         historicos.append(data)
-
+    
     # Ordenar por trimestre
     historicos = sorted(historicos, key=lambda x: x.get('trimestre', 0))
     return historicos
@@ -265,9 +256,9 @@ def criar_descarte(usuario_id, numero, linha, material, quantidade, pontos, cust
     """Cria novo descarte no Firestore"""
     if not db:
         return
-
+    
     descarte_id = int(datetime.now().timestamp() * 1000)
-
+    
     dados = {
         'id': descarte_id,
         'usuarioId': usuario_id,
@@ -280,40 +271,40 @@ def criar_descarte(usuario_id, numero, linha, material, quantidade, pontos, cust
         'customizado': customizado,
         'data': datetime.now()
     }
-
+    
     db.collection('descartes').document(str(descarte_id)).set(dados)
 
 def load_descartes():
     """Carrega todos os descartes"""
     if not db:
         return []
-
+    
     descartes = []
     docs = db.collection('descartes').stream()
-
+    
     for doc in docs:
         data = doc.to_dict()
         # Converter Timestamp para string
         if 'data' in data and hasattr(data['data'], 'strftime'):
             data['data'] = data['data'].strftime('%d/%m/%Y %H:%M')
         descartes.append(data)
-
+    
     return descartes
 
 def atualizar_status_descarte(descarte_id, status):
     """Atualiza status do descarte"""
     if not db:
         return
-
+    
     db.collection('descartes').document(str(descarte_id)).update({'status': status})
 
 def criar_resgate(usuario_id, categoria, cupom, codigo, pontos):
     """Cria novo resgate no Firestore"""
     if not db:
         return
-
+    
     resgate_id = int(datetime.now().timestamp() * 1000)
-
+    
     dados = {
         'id': resgate_id,
         'usuarioId': usuario_id,
@@ -324,31 +315,31 @@ def criar_resgate(usuario_id, categoria, cupom, codigo, pontos):
         'status': 'Pendente',
         'data': datetime.now()
     }
-
+    
     db.collection('resgates').document(str(resgate_id)).set(dados)
 
 def load_resgates():
     """Carrega todos os resgates"""
     if not db:
         return []
-
+    
     resgates = []
     docs = db.collection('resgates').stream()
-
+    
     for doc in docs:
         data = doc.to_dict()
         # Converter Timestamp para string
         if 'data' in data and hasattr(data['data'], 'strftime'):
             data['data'] = data['data'].strftime('%d/%m/%Y %H:%M')
         resgates.append(data)
-
+    
     return resgates
 
 def atualizar_status_resgate(resgate_id, status):
     """Atualiza status do resgate"""
     if not db:
         return
-
+    
     db.collection('resgates').document(str(resgate_id)).update({'status': status})
 
 def exportar_backup():
@@ -415,112 +406,23 @@ if 'user' not in st.session_state:
 
 def home_screen():
     st.markdown("<h1>♻️ Eco Eletrônico - FECTI 2024</h1>", unsafe_allow_html=True)
-
+    
     if not db:
         st.error("❌ Firestore não configurado!")
-
-        with st.expander("📖 TUTORIAL COMPLETO: Como Configurar o Firestore", expanded=True):
-            st.markdown("""
-            ## 🔥 Passo a Passo para Configurar Firebase/Firestore
-            
-            ### **1️⃣ Criar Projeto Firebase**
-            
-            1. Acesse: [Firebase Console](https://console.firebase.google.com/)
-            2. Clique em **"Adicionar projeto"**
-            3. Nome: `eco-eletronico-fecti`
-            4. Desabilite Google Analytics
-            5. Clique em **"Criar projeto"**
-            
-            ---
-            
-            ### **2️⃣ Ativar Firestore Database**
-            
-            1. Menu lateral → **"Firestore Database"**
-            2. Clique em **"Criar banco de dados"**
-            3. Modo: **"Iniciar no modo de produção"**
-            4. Localização: **`southamerica-east1 (São Paulo)`**
-            5. Clique em **"Ativar"**
-            6. Aguarde 1-2 minutos
-            
-            ---
-            
-            ### **3️⃣ Configurar Regras de Segurança**
-            
-            1. Aba **"Regras"**
-            2. Delete tudo e cole:
-            
-            ```javascript
-            rules_version = '2';
-            service cloud.firestore {
-              match /databases/{database}/documents {
-                match /{document=**} {
-                  allow read, write: if true;
-                }
-              }
-            }
-            ```
-            
-            3. Clique em **"Publicar"**
-            
-            ---
-            
-            ### **4️⃣ Baixar Credenciais**
-            
-            1. ⚙️ **Configurações do projeto**
-            2. Aba **"Contas de serviço"**
-            3. **"Gerar nova chave privada"**
-            4. Salve como: `firebase-credentials.json`
-            
-            ---
-            
-            ### **5️⃣ Configurar no Streamlit Cloud**
-            
-            1. No Streamlit Cloud: **Settings → Secrets**
-            2. Cole:
-            
-            ```toml
-            [firebase]
-            key = \"\"\"
-            {
-              "type": "service_account",
-              "project_id": "seu-projeto-id",
-              "private_key_id": "abc123...",
-              "private_key": "-----BEGIN PRIVATE KEY-----\\n...\\n-----END PRIVATE KEY-----\\n",
-              "client_email": "firebase-adminsdk@...iam.gserviceaccount.com",
-              "client_id": "123...",
-              "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-              "token_uri": "https://oauth2.googleapis.com/token",
-              "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-              "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/...",
-              "universe_domain": "googleapis.com"
-            }
-            \"\"\"
-            ```
-            
-            3. **Copie TODO o conteúdo** do arquivo JSON baixado
-            4. Cole entre as aspas triplas (`\"\"\"`)
-            5. Clique em **Save**
-            
-            ---
-            
-            ### **✅ Pronto!**
-            
-            O app deve reiniciar e conectar automaticamente ao Firestore!
-            """)
-
+        st.info("Configure as credenciais do Firebase")
         return
-
+    
     st.markdown("""<div style='text-align: center; padding: 40px;'>
         <h2 style='color: #ffffff;'>🔥 Dados no Firestore (Google Cloud)!</h2>
         <p style='font-size: 1.2em; color: #ffffff;'>📱 Traga eletrônicos | ⭐ Ganhe pontos | 🎁 Troque por cupons</p>
     </div>""", unsafe_allow_html=True)
-
+    
     try:
         usuarios = load_usuarios()
         st.success(f"✅ Firestore conectado! 👥 {len(usuarios)} alunos cadastrados")
     except Exception as e:
         st.warning(f"⚠️ Carregando... {str(e)}")
-
+    
     col1, col2, col3 = st.columns(3)
     with col1:
         if st.button("📝 Cadastrar", use_container_width=True):
@@ -539,7 +441,7 @@ def cadastro_screen():
     st.markdown("<h1>♻️ Cadastro</h1>", unsafe_allow_html=True)
     nome = st.text_input("Nome Completo")
     turma = st.selectbox("Turma", ['Selecione...'] + TURMAS)
-
+    
     col1, col2 = st.columns(2)
     with col1:
         if st.button("Cadastrar", use_container_width=True):
@@ -563,7 +465,7 @@ def login_screen():
     st.markdown("<h1>♻️ Login</h1>", unsafe_allow_html=True)
     nome = st.text_input("Nome Completo")
     turma = st.selectbox("Turma", ['Selecione...'] + TURMAS)
-
+    
     col1, col2 = st.columns(2)
     with col1:
         if st.button("Entrar", use_container_width=True):
@@ -586,7 +488,7 @@ def login_screen():
 def dashboard_screen():
     st.markdown("<h1>♻️ Dashboard</h1>", unsafe_allow_html=True)
     st.session_state.user = buscar_usuario(st.session_state.user['nome'], st.session_state.user['turma'])
-
+    
     col1, col2, col3, col4 = st.columns(4)
     with col1:
         if st.button("📱 Cadastrar Eletrônico", use_container_width=True):
@@ -605,13 +507,13 @@ def dashboard_screen():
             st.session_state.user = None
             st.session_state.screen = 'home'
             st.rerun()
-
+    
     st.markdown(f"## 👋 {st.session_state.user['nome']}")
     st.markdown(f"<div class='stat-card'><p>Seus Pontos</p><h1>{st.session_state.user['pontos']:.1f}</h1></div>", unsafe_allow_html=True)
-
+    
     st.markdown("### 📱 Seus Eletrônicos:")
     descartes = [d for d in load_descartes() if d['usuarioId'] == st.session_state.user['id']][:10]
-
+    
     if descartes:
         for d in descartes:
             card = 'card-ok' if d['status'] == 'Aprovado' else 'card-wait'
@@ -626,13 +528,13 @@ def dashboard_screen():
 def cadastrar_eletro_screen():
     st.markdown("<h1>♻️ Cadastrar Eletrônico</h1>", unsafe_allow_html=True)
     linha = st.selectbox("Linha", ['Selecione...'] + list(MATERIAIS.keys()))
-
+    
     if linha != 'Selecione...':
         materiais = MATERIAIS[linha]
         opcoes = list(materiais.keys()) + ['📝 Outro']
         material_sel = st.selectbox("Material", opcoes,
             format_func=lambda x: f"{x} ({materiais.get(x, '?')}pts)" if x != '📝 Outro' else x)
-
+        
         if material_sel == '📝 Outro':
             material_custom = st.text_input("Digite o material:")
             pontos_custom = st.number_input("Pontos sugeridos:", min_value=0.5, max_value=5.0, value=2.0, step=0.5)
@@ -641,9 +543,9 @@ def cadastrar_eletro_screen():
         else:
             material_final = material_sel
             pontos_final = materiais[material_sel]
-
+        
         qtd = st.number_input("Quantidade", min_value=1, value=1)
-
+        
         col1, col2 = st.columns(2)
         with col1:
             if st.button("Cadastrar", use_container_width=True):
@@ -668,29 +570,29 @@ def cadastrar_eletro_screen():
 def cupons_screen():
     st.markdown("<h1>♻️ Cupons</h1>", unsafe_allow_html=True)
     st.session_state.user = buscar_usuario(st.session_state.user['nome'], st.session_state.user['turma'])
-
+    
     # Obter trimestre atual
     trimestre_atual = get_trimestre_atual()
-
+    
     st.info(f"📅 **Trimestre Atual: {trimestre_atual}º**")
     st.markdown(f"### Seus Pontos: {st.session_state.user['pontos']:.1f}")
-
+    
     categorias_compradas = st.session_state.user.get('categoriasCompradas', {'1': [], '2': [], '3': []})
     if not isinstance(categorias_compradas, dict):
         categorias_compradas = {'1': [], '2': [], '3': []}
-
+    
     categorias_trimestre = categorias_compradas.get(str(trimestre_atual), [])
-
+    
     # Avisar quantos cupons já foram comprados
     total_categorias = len(CATEGORIAS)
     comprados = len(categorias_trimestre)
-
+    
     if comprados > 0:
         st.warning(f"⚠️ Você já comprou {comprados}/{total_categorias} cupons neste trimestre")
-
+    
     if comprados == total_categorias:
         st.success("✅ Você comprou todos os cupons deste trimestre! Aguarde o próximo trimestre.")
-
+    
     for cat_nome, cupons in CATEGORIAS.items():
         st.markdown(f"### 🎫 {cat_nome}")
         for cupom in cupons:
@@ -704,8 +606,8 @@ def cupons_screen():
             with col2:
                 # Verificar se já comprou neste trimestre
                 pode = cat_nome not in categorias_trimestre
-
-                if st.button("Comprar", key=f"c_{cat_nome}_{cupom['nome']}",
+                
+                if st.button("Comprar", key=f"c_{cat_nome}_{cupom['nome']}", 
                            use_container_width=True, disabled=not pode):
                     if st.session_state.user['pontos'] < cupom['pontos']:
                         st.error("❌ Pontos insuficientes!")
@@ -717,7 +619,7 @@ def cupons_screen():
                             criar_resgate(st.session_state.user['id'], cat_nome, cupom['nome'], codigo, cupom['pontos'])
                         st.success(f"✅ Cupom {codigo} solicitado!")
                         st.rerun()
-
+    
     if st.button("🏠 Dashboard", use_container_width=True):
         st.session_state.screen = 'dashboard'
         st.rerun()
@@ -725,7 +627,7 @@ def cupons_screen():
 def resgates_screen():
     st.markdown("<h1>♻️ Meus Cupons</h1>", unsafe_allow_html=True)
     resgates = [r for r in load_resgates() if r['usuarioId'] == st.session_state.user['id']]
-
+    
     if resgates:
         for r in resgates:
             if r['status'] == 'Aprovado':
@@ -740,7 +642,7 @@ def resgates_screen():
                 {status}<br><small>{r['data']}</small></div>""", unsafe_allow_html=True)
     else:
         st.info("Nenhum cupom")
-
+    
     if st.button("Voltar", use_container_width=True):
         st.session_state.screen = 'dashboard'
         st.rerun()
@@ -763,19 +665,19 @@ def admin_login_screen():
 
 def admin_screen():
     st.markdown("<h1>⚙️ Painel Admin</h1>", unsafe_allow_html=True)
-
+    
     if st.button("🚪 Sair"):
         st.session_state.screen = 'home'
         st.rerun()
-
+    
     usuarios = load_usuarios()
     descartes = load_descartes()
     resgates = load_resgates()
-
+    
     # CONTROLE DE TRIMESTRE
     st.markdown("### 📅 Controle de Trimestre")
     trimestre_atual = get_trimestre_atual()
-
+    
     col1, col2, col3, col4 = st.columns(4)
     with col1:
         st.info(f"**Trimestre Atual: {trimestre_atual}º**")
@@ -818,16 +720,16 @@ def admin_screen():
                 st.rerun()
             else:
                 st.warning("⚠️ Já estamos no 3º trimestre!")
-
+    
     st.warning("⚠️ **ATENÇÃO:** Ao trocar de trimestre, a pontuação de TODOS os alunos será resetada para 0! O ranking atual será salvo no histórico.")
-
+    
     st.markdown("---")
-
+    
     # HISTÓRICO DE TRIMESTRES
     st.markdown("### 📚 Histórico de Trimestres Anteriores")
-
+    
     historicos = get_todos_historicos()
-
+    
     if historicos:
         for hist in historicos:
             with st.expander(f"📊 {hist['trimestre']}º Trimestre - Encerrado em {hist['dataFechamento']}"):
@@ -837,9 +739,9 @@ def admin_screen():
                 - 📱 Total de descartes: {hist['totalDescartes']}
                 - ✅ Descartes aprovados: {hist['totalAprovados']}
                 """)
-
+                
                 st.markdown("#### 🏆 Ranking do Trimestre:")
-
+                
                 for i, aluno in enumerate(hist['ranking'][:20], 1):
                     if i == 1:
                         medal = "🥇"
@@ -849,12 +751,12 @@ def admin_screen():
                         medal = "🥉"
                     else:
                         medal = f"**{i}º**"
-
+                    
                     st.markdown(f"""<div class='card-ok'>
                         {medal} <b>{aluno['nome']}</b> ({aluno['turma']})<br>
                         💎 Pontos: {aluno['pontos']:.1f} | 📱 Descartes: {aluno['descartesAprovados']}
                     </div>""", unsafe_allow_html=True)
-
+                
                 if len(hist['ranking']) > 20:
                     with st.expander(f"Ver todos os {len(hist['ranking'])} alunos"):
                         for i, aluno in enumerate(hist['ranking'][20:], 21):
@@ -862,7 +764,7 @@ def admin_screen():
                                 <b>{i}º - {aluno['nome']}</b> ({aluno['turma']})<br>
                                 💎 Pontos: {aluno['pontos']:.1f} | 📱 Descartes: {aluno['descartesAprovados']}
                             </div>""", unsafe_allow_html=True)
-
+                
                 # Botão para exportar histórico
                 backup_hist = json.dumps(hist, ensure_ascii=False, indent=2)
                 st.download_button(
@@ -873,12 +775,12 @@ def admin_screen():
                 )
     else:
         st.info("Nenhum histórico de trimestre anterior ainda.")
-
+    
     st.markdown("---")
-
+    
     # ESTATÍSTICAS GERAIS (TRIMESTRE ATUAL)
     st.markdown(f"### 📊 Estatísticas do {trimestre_atual}º Trimestre (Atual)")
-
+    
     col1, col2, col3, col4 = st.columns(4)
     with col1:
         st.markdown(f"<div class='stat-card'><p>Usuários</p><h1>{len(usuarios)}</h1></div>", unsafe_allow_html=True)
@@ -890,19 +792,19 @@ def admin_screen():
     with col4:
         pend = len([r for r in resgates if r['status'] == 'Pendente'])
         st.markdown(f"<div class='stat-card'><p>Cupons Pend.</p><h1>{pend}</h1></div>", unsafe_allow_html=True)
-
+    
     st.markdown("---")
-
+    
     # RANKING ATUAL
     st.markdown(f"### 🏆 Ranking Atual do {trimestre_atual}º Trimestre")
-
+    
     # Ordenar usuários por pontos
     usuarios_ordenados = sorted(usuarios, key=lambda x: x.get('pontos', 0), reverse=True)
-
+    
     # Exibir top 20
     for i, user in enumerate(usuarios_ordenados[:20], 1):
         descartes_user = len([d for d in descartes if d['usuarioId'] == user['id'] and d['status'] == 'Aprovado'])
-
+        
         # Medalhas para top 3
         if i == 1:
             medal = "🥇"
@@ -912,12 +814,12 @@ def admin_screen():
             medal = "🥉"
         else:
             medal = f"**{i}º**"
-
+        
         st.markdown(f"""<div class='card-ok'>
             {medal} <b>{user['nome']}</b> ({user['turma']})<br>
             💎 Pontos: {user['pontos']:.1f} | 📱 Descartes aprovados: {descartes_user}
         </div>""", unsafe_allow_html=True)
-
+    
     if len(usuarios_ordenados) > 20:
         with st.expander(f"📋 Ver todos os {len(usuarios_ordenados)} alunos"):
             for i, user in enumerate(usuarios_ordenados[20:], 21):
@@ -926,22 +828,22 @@ def admin_screen():
                     <b>{i}º - {user['nome']}</b> ({user['turma']})<br>
                     💎 Pontos: {user['pontos']:.1f} | 📱 Descartes: {descartes_user}
                 </div>""", unsafe_allow_html=True)
-
+    
     st.markdown("---")
-
+    
     # BACKUP
     st.markdown("### 💾 Backup Geral")
     if st.button("📥 Exportar Todos os Dados (JSON)", use_container_width=True):
         backup = exportar_backup()
         st.download_button("💾 Download Backup Completo", backup,
             f"backup_completo_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json", "application/json")
-
+    
     st.markdown("---")
-
+    
     # DESCARTES PENDENTES
     st.markdown("### ⏳ Descartes Pendentes")
     descartes_pend = [d for d in descartes if d['status'] == 'Pendente']
-
+    
     if descartes_pend:
         for d in descartes_pend:
             user = next((u for u in usuarios if u['id'] == d['usuarioId']), None)
@@ -962,13 +864,13 @@ def admin_screen():
                     st.rerun()
     else:
         st.info("Nenhum descarte pendente")
-
+    
     st.markdown("---")
-
+    
     # CUPONS PENDENTES
     st.markdown("### 🎫 Cupons Pendentes")
     cupons_pend = [r for r in resgates if r['status'] == 'Pendente']
-
+    
     if cupons_pend:
         for r in cupons_pend:
             user = next((u for u in usuarios if u['id'] == r['usuarioId']), None)
@@ -996,7 +898,7 @@ def admin_screen():
 
 def main():
     screen = st.session_state.get('screen', 'home')
-
+    
     if screen == 'home':
         home_screen()
     elif screen == 'cadastro':
