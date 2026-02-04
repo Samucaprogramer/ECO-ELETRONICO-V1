@@ -1,0 +1,36 @@
+[
+  {
+    "id": 1763223806823,
+    "usuarioId": 1763223749085,
+    "numero": "DSC-1763223806823",
+    "linha": "Linha Marrom",
+    "material": "Televisor",
+    "quantidade": 1,
+    "pontos": 5,
+    "status": "Aprovado",
+    "data": "15/11/2025 13:23"
+  },
+  {
+    "id": 1763326466494,
+    "usuarioId": 1763220736882,
+    "numero": "DSC-1763326466494",
+    "linha": "Linha Marrom",
+    "material": "Televisor",
+    "quantidade": 1,
+    "pontos": 5,
+    "status": "Aprovado",
+    "data": "16/11/2025 17:54"
+  },
+  {
+    "id": 1763675964707,
+    "usuarioId": 1763220736882,
+    "numero": "DSC-1763675964707",
+    "linha": "Linha Marrom",
+    "material": "Pilhas",
+    "quantidade": 1,
+    "pontos": 5.0,
+    "status": "Aprovado",
+    "customizado": true,
+    "data": "20/11/2025 18:59"
+  }
+]
