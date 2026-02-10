@@ -22,6 +22,15 @@ except ImportError:
     def calcular_impacto_total(m, q): return None
     def formatar_impacto_ambiental(i): return ""
 
+# Importar identificador inteligente de materiais
+try:
+    from identificador_materiais import identificar_material, formatar_resultado_identificacao
+    IDENTIFICADOR_DISPONIVEL = True
+except ImportError:
+    IDENTIFICADOR_DISPONIVEL = False
+    def identificar_material(d): return {'identificado': False, 'material': None, 'sugestoes': []}
+    def formatar_resultado_identificacao(r): return 'nao_identificado', ""
+
 # ========================================
 # CONFIGURAÇÃO DO FIRESTORE
 # ========================================
@@ -714,6 +723,110 @@ if 'user' not in st.session_state:
     st.session_state.screen = 'home'
 
 # ========================================
+# CSS E ESTILIZAÇÃO
+# ========================================
+
+st.markdown("""
+<style>
+    /* Configuração geral da página */
+    .stApp {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    
+    /* Card de estatísticas */
+    .stat-card {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+        padding: 20px;
+        border-radius: 10px;
+        text-align: center;
+        margin: 10px 0;
+    }
+    
+    .stat-card h1 {
+        font-size: 3em;
+        margin: 10px 0;
+    }
+    
+    .stat-card p {
+        font-size: 1.2em;
+        opacity: 0.9;
+    }
+    
+    /* Card aprovado (verde) */
+    .card-ok {
+        background: linear-gradient(135deg, #11998e, #38ef7d);
+        color: white;
+        padding: 15px;
+        border-radius: 8px;
+        margin: 8px 0;
+    }
+    
+    /* Card pendente (amarelo/laranja) */
+    .card-wait {
+        background: linear-gradient(135deg, #f093fb, #f5576c);
+        color: white;
+        padding: 15px;
+        border-radius: 8px;
+        margin: 8px 0;
+    }
+    
+    /* Card informativo (azul) */
+    .card-info {
+        background: linear-gradient(135deg, #4facfe, #00f2fe);
+        color: white;
+        padding: 15px;
+        border-radius: 8px;
+        margin: 8px 0;
+    }
+    
+    /* Títulos */
+    h1, h2, h3 {
+        color: white;
+    }
+    
+    /* Texto geral */
+    p, label, .stMarkdown {
+        color: white;
+    }
+    
+    /* Inputs e selectbox */
+    .stTextInput input, .stSelectbox select, .stNumberInput input {
+        background-color: rgba(255, 255, 255, 0.9);
+        color: #333;
+    }
+    
+    /* Botões */
+    .stButton button {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+        border: none;
+        border-radius: 5px;
+        padding: 10px 20px;
+        font-weight: bold;
+    }
+    
+    .stButton button:hover {
+        background: linear-gradient(135deg, #764ba2, #667eea);
+        transform: scale(1.02);
+    }
+    
+    /* Formulários */
+    .stForm {
+        background: rgba(255, 255, 255, 0.1);
+        padding: 20px;
+        border-radius: 10px;
+        margin: 10px 0;
+    }
+    
+    /* Mensagens de sucesso/erro/info */
+    .stSuccess, .stError, .stWarning, .stInfo {
+        border-radius: 8px;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# ========================================
 # TELAS
 # ========================================
 
@@ -1203,7 +1316,8 @@ def cadastrar_eletro_screen():
     if 'preview_impacto' in st.session_state and st.session_state.preview_impacto:
         impacto_html = formatar_impacto_ambiental(st.session_state.preview_impacto)
         if impacto_html:
-            st.markdown(impacto_html, unsafe_allow_html=True)
+            st.markdown(impacto_html, unsafe_allow_html=True)  # IMPORTANTE: unsafe_allow_html=True
+            
             if st.button("✅ Confirmar Cadastro", use_container_width=True, type="primary"):
                 # Finalizar cadastro
                 pts = st.session_state.preview_pts
@@ -1256,9 +1370,79 @@ def cadastrar_eletro_screen():
         
         if material_sel == '📝 Outro':
             material_custom = st.text_input("Digite o material:")
-            pontos_custom = st.number_input("Pontos sugeridos:", min_value=0.5, max_value=5.0, value=2.0, step=0.5)
-            material_final = material_custom
-            pontos_final = pontos_custom
+            
+            # Identificação inteligente
+            if material_custom and IDENTIFICADOR_DISPONIVEL:
+                resultado = identificar_material(material_custom)
+                tipo, html = formatar_resultado_identificacao(resultado)
+                
+                st.markdown(html, unsafe_allow_html=True)
+                
+                if resultado['identificado']:
+                    # Material identificado automaticamente!
+                    st.success(f"✅ Identificamos automaticamente como: **{resultado['material']}**")
+                    
+                    if st.button("✅ Usar material identificado", use_container_width=True):
+                        # Buscar o material identificado nos materiais cadastrados
+                        material_encontrado = False
+                        for linha_cat, mats in MATERIAIS.items():
+                            if resultado['material'] in mats:
+                                material_final = resultado['material']
+                                pontos_final = mats[resultado['material']]
+                                material_encontrado = True
+                                st.success(f"Material atualizado para: {resultado['material']} ({pontos_final} pontos)")
+                                break
+                        
+                        if not material_encontrado:
+                            # Material identificado mas não está na lista oficial
+                            st.warning("Material identificado mas não está na lista oficial. Usando descrição customizada.")
+                            material_final = resultado['material']
+                            pontos_custom = st.number_input("Pontos sugeridos:", min_value=0.5, max_value=5.0, value=2.0, step=0.5)
+                            pontos_final = pontos_custom
+                    
+                    if st.button("📝 Manter descrição original", use_container_width=True):
+                        material_final = material_custom
+                        pontos_custom = st.number_input("Pontos sugeridos:", min_value=0.5, max_value=5.0, value=2.0, step=0.5, key="pontos_custom_original")
+                        pontos_final = pontos_custom
+                
+                elif resultado['sugestoes']:
+                    # Mostrar sugestões
+                    st.info("💡 Selecione uma das sugestões ou continue com sua descrição:")
+                    
+                    opcoes_sugestoes = [s['material'] for s in resultado['sugestoes']]
+                    opcoes_sugestoes.append("📝 Continuar com minha descrição")
+                    
+                    escolha = st.selectbox("Escolha uma opção:", opcoes_sugestoes)
+                    
+                    if escolha == "📝 Continuar com minha descrição":
+                        material_final = material_custom
+                        pontos_custom = st.number_input("Pontos sugeridos:", min_value=0.5, max_value=5.0, value=2.0, step=0.5, key="pontos_custom_desc")
+                        pontos_final = pontos_custom
+                    else:
+                        # Usar sugestão selecionada
+                        material_final = escolha
+                        # Buscar pontos do material sugerido
+                        for linha_cat, mats in MATERIAIS.items():
+                            if escolha in mats:
+                                pontos_final = mats[escolha]
+                                st.success(f"✅ Material: {escolha} ({pontos_final} pontos)")
+                                break
+                        else:
+                            pontos_custom = st.number_input("Pontos sugeridos:", min_value=0.5, max_value=5.0, value=2.0, step=0.5, key="pontos_custom_sug")
+                            pontos_final = pontos_custom
+                
+                else:
+                    # Não identificado - continuar com descrição
+                    material_final = material_custom
+                    pontos_custom = st.number_input("Pontos sugeridos:", min_value=0.5, max_value=5.0, value=2.0, step=0.5, key="pontos_custom_nao_id")
+                    pontos_final = pontos_custom
+                    st.info("✅ Seu material será registrado como: **Material Não Identificado** e aprovado normalmente!")
+            
+            else:
+                # Sem identificador - modo normal
+                material_final = material_custom
+                pontos_custom = st.number_input("Pontos sugeridos:", min_value=0.5, max_value=5.0, value=2.0, step=0.5)
+                pontos_final = pontos_custom
         else:
             material_final = material_sel
             pontos_final = materiais[material_sel]
