@@ -1315,8 +1315,12 @@ def cadastrar_eletro_screen():
     # Mostrar preview de impacto se houver
     if 'preview_impacto' in st.session_state and st.session_state.preview_impacto:
         impacto_html = formatar_impacto_ambiental(st.session_state.preview_impacto)
+        
         if impacto_html:
-            st.markdown(impacto_html, unsafe_allow_html=True)  # IMPORTANTE: unsafe_allow_html=True
+            # Renderizar HTML com unsafe_allow_html=True
+            st.markdown(impacto_html, unsafe_allow_html=True)
+            
+            st.markdown("---")  # Linha separadora
             
             if st.button("✅ Confirmar Cadastro", use_container_width=True, type="primary"):
                 # Finalizar cadastro
