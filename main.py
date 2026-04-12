@@ -1368,6 +1368,10 @@ def cadastrar_eletro_screen():
         material_sel = st.selectbox("Material", opcoes,
             format_func=lambda x: f"{x} ({materiais.get(x, '?')}pts)" if x != '📝 Outro' else x)
         
+        # Inicializar variáveis
+        material_final = None
+        pontos_final = 0
+        
         if material_sel == '📝 Outro':
             material_custom = st.text_input("Digite o material:")
             
@@ -1382,28 +1386,44 @@ def cadastrar_eletro_screen():
                     # Material identificado automaticamente!
                     st.success(f"✅ Identificamos automaticamente como: **{resultado['material']}**")
                     
-                    if st.button("✅ Usar material identificado", use_container_width=True):
-                        # Buscar o material identificado nos materiais cadastrados
-                        material_encontrado = False
-                        for linha_cat, mats in MATERIAIS.items():
-                            if resultado['material'] in mats:
-                                material_final = resultado['material']
-                                pontos_final = mats[resultado['material']]
-                                material_encontrado = True
-                                st.success(f"Material atualizado para: {resultado['material']} ({pontos_final} pontos)")
-                                break
-                        
-                        if not material_encontrado:
-                            # Material identificado mas não está na lista oficial
-                            st.warning("Material identificado mas não está na lista oficial. Usando descrição customizada.")
-                            material_final = resultado['material']
-                            pontos_custom = st.number_input("Pontos sugeridos:", min_value=0.5, max_value=5.0, value=2.0, step=0.5)
-                            pontos_final = pontos_custom
+                    col_id1, col_id2 = st.columns(2)
                     
-                    if st.button("📝 Manter descrição original", use_container_width=True):
+                    with col_id1:
+                        if st.button("✅ Usar material identificado", use_container_width=True, key="btn_usar_id"):
+                            # Buscar o material identificado nos materiais cadastrados
+                            material_encontrado = False
+                            for linha_cat, mats in MATERIAIS.items():
+                                if resultado['material'] in mats:
+                                    material_final = resultado['material']
+                                    pontos_final = mats[resultado['material']]
+                                    material_encontrado = True
+                                    st.success(f"Material atualizado para: {resultado['material']} ({pontos_final} pontos)")
+                                    st.session_state.material_escolhido = material_final
+                                    st.session_state.pontos_escolhido = pontos_final
+                                    break
+                            
+                            if not material_encontrado:
+                                material_final = resultado['material']
+                                pontos_final = 2.0
+                                st.session_state.material_escolhido = material_final
+                                st.session_state.pontos_escolhido = pontos_final
+                    
+                    with col_id2:
+                        if st.button("📝 Manter descrição original", use_container_width=True, key="btn_manter_orig"):
+                            material_final = material_custom
+                            st.session_state.material_escolhido = material_custom
+                            st.session_state.pontos_escolhido = None
+                    
+                    # Usar valores do session_state se existirem
+                    if 'material_escolhido' in st.session_state:
+                        material_final = st.session_state.material_escolhido
+                        if 'pontos_escolhido' in st.session_state and st.session_state.pontos_escolhido:
+                            pontos_final = st.session_state.pontos_escolhido
+                        else:
+                            pontos_final = st.number_input("Pontos sugeridos:", min_value=0.5, max_value=5.0, value=2.0, step=0.5, key="pontos_id")
+                    else:
                         material_final = material_custom
-                        pontos_custom = st.number_input("Pontos sugeridos:", min_value=0.5, max_value=5.0, value=2.0, step=0.5, key="pontos_custom_original")
-                        pontos_final = pontos_custom
+                        pontos_final = st.number_input("Pontos sugeridos:", min_value=0.5, max_value=5.0, value=2.0, step=0.5, key="pontos_id2")
                 
                 elif resultado['sugestoes']:
                     # Mostrar sugestões
@@ -1412,44 +1432,48 @@ def cadastrar_eletro_screen():
                     opcoes_sugestoes = [s['material'] for s in resultado['sugestoes']]
                     opcoes_sugestoes.append("📝 Continuar com minha descrição")
                     
-                    escolha = st.selectbox("Escolha uma opção:", opcoes_sugestoes)
+                    escolha = st.selectbox("Escolha uma opção:", opcoes_sugestoes, key="select_sugestoes")
                     
                     if escolha == "📝 Continuar com minha descrição":
                         material_final = material_custom
-                        pontos_custom = st.number_input("Pontos sugeridos:", min_value=0.5, max_value=5.0, value=2.0, step=0.5, key="pontos_custom_desc")
-                        pontos_final = pontos_custom
+                        pontos_final = st.number_input("Pontos sugeridos:", min_value=0.5, max_value=5.0, value=2.0, step=0.5, key="pontos_custom_desc")
                     else:
                         # Usar sugestão selecionada
                         material_final = escolha
                         # Buscar pontos do material sugerido
+                        encontrado = False
                         for linha_cat, mats in MATERIAIS.items():
                             if escolha in mats:
                                 pontos_final = mats[escolha]
                                 st.success(f"✅ Material: {escolha} ({pontos_final} pontos)")
+                                encontrado = True
                                 break
-                        else:
-                            pontos_custom = st.number_input("Pontos sugeridos:", min_value=0.5, max_value=5.0, value=2.0, step=0.5, key="pontos_custom_sug")
-                            pontos_final = pontos_custom
+                        
+                        if not encontrado:
+                            pontos_final = st.number_input("Pontos sugeridos:", min_value=0.5, max_value=5.0, value=2.0, step=0.5, key="pontos_custom_sug")
                 
                 else:
                     # Não identificado - continuar com descrição
                     material_final = material_custom
-                    pontos_custom = st.number_input("Pontos sugeridos:", min_value=0.5, max_value=5.0, value=2.0, step=0.5, key="pontos_custom_nao_id")
-                    pontos_final = pontos_custom
+                    pontos_final = st.number_input("Pontos sugeridos:", min_value=0.5, max_value=5.0, value=2.0, step=0.5, key="pontos_custom_nao_id")
                     st.info("✅ Seu material será registrado como: **Material Não Identificado** e aprovado normalmente!")
             
-            else:
-                # Sem identificador - modo normal
+            elif material_custom:
+                # Sem identificador ou campo vazio - modo normal
                 material_final = material_custom
-                pontos_custom = st.number_input("Pontos sugeridos:", min_value=0.5, max_value=5.0, value=2.0, step=0.5)
-                pontos_final = pontos_custom
+                pontos_final = st.number_input("Pontos sugeridos:", min_value=0.5, max_value=5.0, value=2.0, step=0.5, key="pontos_custom_simples")
+            else:
+                # Campo vazio
+                material_final = ""
+                pontos_final = 0
         else:
+            # Material da lista oficial
             material_final = material_sel
             pontos_final = materiais[material_sel]
         
         qtd = st.number_input("Quantidade", min_value=1, value=1)
         
-        # Preview do impacto
+        # Preview do impacto (só se material_final estiver definido)
         if material_final and material_final.strip() and IMPACTO_DISPONIVEL:
             impacto_preview = calcular_impacto_total(material_final, qtd)
             if impacto_preview:
