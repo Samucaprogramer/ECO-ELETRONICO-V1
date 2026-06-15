@@ -1,4 +1,4 @@
-# main.py - Eco Eletrônico COMPLETO
+# main.py - EcoPlat COMPLETO
 # Com: FIRESTORE + AUTENTICAÇÃO + IMPACTO AMBIENTAL + LGPD + BIG DATA
 # Sugestões implementadas do ChatGPT
 # Requisitos: pip install streamlit firebase-admin bcrypt
@@ -20,7 +20,7 @@ try:
 except ImportError:
     IMPACTO_DISPONIVEL = False
     def calcular_impacto_total(m, q): return None
-    def formatar_impacto_ambiental(i): return ""
+    def formatar_impacto_ambiental(i): pass  # Agora não retorna nada, apenas renderiza
 
 # Importar identificador inteligente de materiais
 try:
@@ -676,7 +676,7 @@ def exportar_backup():
 # CONFIGURAÇÃO STREAMLIT
 # ========================================
 
-st.set_page_config(page_title="Eco Eletrônico", page_icon="♻️", layout="wide")
+st.set_page_config(page_title="EcoPlat", page_icon="♻️", layout="wide")
 
 st.markdown("""
 <style>
@@ -694,10 +694,10 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-TURMAS = ['601', '602', '603', '604', '605', '606', '607',
-          '701', '702', '703', '704', '705', '706', '707',
-          '801', '802', '803', '804', '805', '806', '807', '808,
-          '901', '902', '903', '904', '905', '906']
+TURMAS = ['501', '502', '503', '504', '601', '602', '603', '604', '605', '606',
+          '701', '702', '703', '704', '705', '706', '707', '708',
+          '801', '802', '803', '804', '805', '806', '807',
+          '901', '902', '903', '904', '905']
 
 MATERIAIS = {
     'Linha Marrom': {'Televisor': 5, 'Computador': 4, 'Notebook': 3.5, 'Monitor': 3},
@@ -831,7 +831,7 @@ st.markdown("""
 # ========================================
 
 def home_screen():
-    st.markdown("<h1>♻️ Eco Eletrônico - FECTI 2024</h1>", unsafe_allow_html=True)
+    st.markdown("<h1>♻️ EcoPlat</h1>", unsafe_allow_html=True)
     
     if not db:
         st.error("❌ Firestore não configurado!")
@@ -867,7 +867,7 @@ def cadastro_screen():
     st.markdown("<h1>📝 Criar Conta</h1>", unsafe_allow_html=True)
     
     st.markdown("""<div class='card-info'>
-        <b>✨ Crie sua conta no Eco Eletrônico!</b><br>
+        <b>✨ Crie sua conta no EcoPlat!</b><br>
         Você precisará deste e-mail e senha para fazer login no futuro.
     </div>""", unsafe_allow_html=True)
     
@@ -1054,7 +1054,7 @@ def recuperar_senha_screen():
 
 def consentimento_lgpd_screen():
     """Tela de consentimento LGPD - Primeira vez do usuário"""
-    st.markdown("<h1>🌍 Bem-vindo ao Eco Eletrônico!</h1>", unsafe_allow_html=True)
+    st.markdown("<h1>🌍 Bem-vindo ao EcoPlat!</h1>", unsafe_allow_html=True)
     
     st.markdown("""
     <div style='background: linear-gradient(135deg, #667eea, #764ba2); color: white; 
@@ -1172,7 +1172,7 @@ def consentimento_lgpd_screen():
             • Seus dados sejam protegidos
             • Você possa pedir a exclusão dos dados
             
-            No Eco Eletrônico, levamos isso muito a sério! 🔒
+            No EcoPlat, levamos isso muito a sério! 🔒
             """)
 
 def dashboard_screen():
@@ -1314,15 +1314,12 @@ def cadastrar_eletro_screen():
     
     # Mostrar preview de impacto se houver
     if 'preview_impacto' in st.session_state and st.session_state.preview_impacto:
-        impacto_html = formatar_impacto_ambiental(st.session_state.preview_impacto)
+        # Renderizar impacto diretamente (função não retorna HTML mais)
+        formatar_impacto_ambiental(st.session_state.preview_impacto)
         
-        if impacto_html:
-            # Renderizar HTML com unsafe_allow_html=True
-            st.markdown(impacto_html, unsafe_allow_html=True)
-            
-            st.markdown("---")  # Linha separadora
-            
-            if st.button("✅ Confirmar Cadastro", use_container_width=True, type="primary"):
+        st.markdown("---")  # Linha separadora
+        
+        if st.button("✅ Confirmar Cadastro", use_container_width=True, type="primary"):
                 # Finalizar cadastro
                 pts = st.session_state.preview_pts
                 numero = f"DSC-{int(datetime.now().timestamp() * 1000)}"
