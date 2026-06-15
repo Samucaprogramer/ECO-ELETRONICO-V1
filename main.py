@@ -1,4 +1,4 @@
-# main.py - EcoPlat COMPLETO
+# main.py - Eco Eletrônico COMPLETO
 # Com: FIRESTORE + AUTENTICAÇÃO + IMPACTO AMBIENTAL + LGPD + BIG DATA
 # Sugestões implementadas do ChatGPT
 # Requisitos: pip install streamlit firebase-admin bcrypt
@@ -20,7 +20,7 @@ try:
 except ImportError:
     IMPACTO_DISPONIVEL = False
     def calcular_impacto_total(m, q): return None
-    def formatar_impacto_ambiental(i): pass  # Agora não retorna nada, apenas renderiza
+    def formatar_impacto_ambiental(i): return ""
 
 # Importar identificador inteligente de materiais
 try:
@@ -676,21 +676,159 @@ def exportar_backup():
 # CONFIGURAÇÃO STREAMLIT
 # ========================================
 
-st.set_page_config(page_title="EcoPlat", page_icon="♻️", layout="wide")
+st.set_page_config(page_title="Eco Eletrônico", page_icon="♻️", layout="wide")
+
+# ========================================
+# CSS E ESTILIZAÇÃO - NOVA PALETA
+# ========================================
 
 st.markdown("""
 <style>
-    .stApp { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-    .stat-card { background: linear-gradient(135deg, #667eea, #764ba2); color: white; 
-                 padding: 30px; border-radius: 15px; text-align: center; margin: 20px 0; }
-    .stat-card h1 { font-size: 3em; margin: 10px 0; }
-    .card-ok { background: #d4edda; border: 2px solid #28a745; padding: 20px; 
-               border-radius: 10px; margin: 15px 0; color: #0b3d13; }
-    .card-wait { background: #fff3cd; border: 2px solid #ffc107; padding: 20px; 
-                 border-radius: 10px; margin: 15px 0; color: #000; }
-    .card-info { background: #d1ecf1; border: 2px solid #0c5460; padding: 20px; 
-                 border-radius: 10px; margin: 15px 0; color: #0c5460; }
-    h1 { color: #ffffff; text-align: center; }
+    /* Configuração geral da página */
+    .stApp {
+        background: #ffffff;
+    }
+    
+    /* Card de estatísticas */
+    .stat-card {
+        background: linear-gradient(135deg, #1a1a1a, #2d2d2d);
+        color: #ffffff;
+        padding: 20px;
+        border-radius: 10px;
+        text-align: center;
+        margin: 10px 0;
+        border: 3px solid #22c55e;
+    }
+    
+    .stat-card h1 {
+        font-size: 3em;
+        margin: 10px 0;
+        color: #22c55e;
+    }
+    
+    .stat-card p {
+        font-size: 1.2em;
+        opacity: 0.9;
+        color: #ffffff;
+    }
+    
+    /* Card aprovado (verde) */
+    .card-ok {
+        background: #f0fdf4;
+        border-left: 5px solid #22c55e;
+        color: #1a1a1a;
+        padding: 15px;
+        border-radius: 8px;
+        margin: 8px 0;
+    }
+    
+    /* Card pendente (cinza/preto) */
+    .card-wait {
+        background: #f5f5f5;
+        border-left: 5px solid #1a1a1a;
+        color: #1a1a1a;
+        padding: 15px;
+        border-radius: 8px;
+        margin: 8px 0;
+    }
+    
+    /* Card informativo (verde suave) */
+    .card-info {
+        background: #ecfdf5;
+        border-left: 5px solid #10b981;
+        color: #1a1a1a;
+        padding: 15px;
+        border-radius: 8px;
+        margin: 8px 0;
+    }
+    
+    /* Títulos */
+    h1, h2, h3 {
+        color: #1a1a1a;
+    }
+    
+    /* Texto geral */
+    p, label {
+        color: #1a1a1a;
+    }
+    
+    .stMarkdown {
+        color: #1a1a1a;
+    }
+    
+    /* Inputs e selectbox */
+    .stTextInput input, .stSelectbox select, .stNumberInput input {
+        background-color: #ffffff;
+        color: #1a1a1a;
+        border: 2px solid #e5e5e5;
+    }
+    
+    .stTextInput input:focus, .stSelectbox select:focus, .stNumberInput input:focus {
+        border: 2px solid #22c55e;
+    }
+    
+    /* Botões */
+    .stButton button {
+        background: #22c55e;
+        color: #ffffff;
+        border: none;
+        border-radius: 8px;
+        padding: 10px 20px;
+        font-weight: bold;
+    }
+    
+    .stButton button:hover {
+        background: #16a34a;
+        transform: scale(1.02);
+    }
+    
+    /* Formulários */
+    .stForm {
+        background: #f9f9f9;
+        padding: 20px;
+        border-radius: 10px;
+        margin: 10px 0;
+        border: 2px solid #e5e5e5;
+    }
+    
+    /* Mensagens de sucesso/erro/info */
+    .stSuccess {
+        background-color: #f0fdf4;
+        border: 2px solid #22c55e;
+        border-radius: 8px;
+        color: #166534;
+    }
+    
+    .stError {
+        background-color: #fee2e2;
+        border: 2px solid #ef4444;
+        border-radius: 8px;
+        color: #991b1b;
+    }
+    
+    .stWarning {
+        background-color: #fef3c7;
+        border: 2px solid #f59e0b;
+        border-radius: 8px;
+        color: #92400e;
+    }
+    
+    .stInfo {
+        background-color: #ecfdf5;
+        border: 2px solid #10b981;
+        border-radius: 8px;
+        color: #065f46;
+    }
+    
+    /* Sidebar */
+    .stSidebar {
+        background: #1a1a1a;
+    }
+    
+    /* Texto sidebar */
+    .stSidebar label, .stSidebar p, .stSidebar div {
+        color: #ffffff;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -723,115 +861,11 @@ if 'user' not in st.session_state:
     st.session_state.screen = 'home'
 
 # ========================================
-# CSS E ESTILIZAÇÃO
-# ========================================
-
-st.markdown("""
-<style>
-    /* Configuração geral da página */
-    .stApp {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    }
-    
-    /* Card de estatísticas */
-    .stat-card {
-        background: linear-gradient(135deg, #667eea, #764ba2);
-        color: white;
-        padding: 20px;
-        border-radius: 10px;
-        text-align: center;
-        margin: 10px 0;
-    }
-    
-    .stat-card h1 {
-        font-size: 3em;
-        margin: 10px 0;
-    }
-    
-    .stat-card p {
-        font-size: 1.2em;
-        opacity: 0.9;
-    }
-    
-    /* Card aprovado (verde) */
-    .card-ok {
-        background: linear-gradient(135deg, #11998e, #38ef7d);
-        color: white;
-        padding: 15px;
-        border-radius: 8px;
-        margin: 8px 0;
-    }
-    
-    /* Card pendente (amarelo/laranja) */
-    .card-wait {
-        background: linear-gradient(135deg, #f093fb, #f5576c);
-        color: white;
-        padding: 15px;
-        border-radius: 8px;
-        margin: 8px 0;
-    }
-    
-    /* Card informativo (azul) */
-    .card-info {
-        background: linear-gradient(135deg, #4facfe, #00f2fe);
-        color: white;
-        padding: 15px;
-        border-radius: 8px;
-        margin: 8px 0;
-    }
-    
-    /* Títulos */
-    h1, h2, h3 {
-        color: white;
-    }
-    
-    /* Texto geral */
-    p, label, .stMarkdown {
-        color: white;
-    }
-    
-    /* Inputs e selectbox */
-    .stTextInput input, .stSelectbox select, .stNumberInput input {
-        background-color: rgba(255, 255, 255, 0.9);
-        color: #333;
-    }
-    
-    /* Botões */
-    .stButton button {
-        background: linear-gradient(135deg, #667eea, #764ba2);
-        color: white;
-        border: none;
-        border-radius: 5px;
-        padding: 10px 20px;
-        font-weight: bold;
-    }
-    
-    .stButton button:hover {
-        background: linear-gradient(135deg, #764ba2, #667eea);
-        transform: scale(1.02);
-    }
-    
-    /* Formulários */
-    .stForm {
-        background: rgba(255, 255, 255, 0.1);
-        padding: 20px;
-        border-radius: 10px;
-        margin: 10px 0;
-    }
-    
-    /* Mensagens de sucesso/erro/info */
-    .stSuccess, .stError, .stWarning, .stInfo {
-        border-radius: 8px;
-    }
-</style>
-""", unsafe_allow_html=True)
-
-# ========================================
 # TELAS
 # ========================================
 
 def home_screen():
-    st.markdown("<h1>♻️ EcoPlat</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 style='color: #1a1a1a;'>♻️ Eco Eletrônico - FECTI 2024</h1>", unsafe_allow_html=True)
     
     if not db:
         st.error("❌ Firestore não configurado!")
@@ -839,8 +873,8 @@ def home_screen():
         return
     
     st.markdown("""<div style='text-align: center; padding: 40px;'>
-        <h2 style='color: #ffffff;'>🔐 Sistema com Autenticação Segura!</h2>
-        <p style='font-size: 1.2em; color: #ffffff;'>📱 Traga eletrônicos | ⭐ Ganhe pontos | 🎁 Troque por cupons</p>
+        <h2 style='color: #1a1a1a;'>🔐 Sistema com Autenticação Segura!</h2>
+        <p style='font-size: 1.2em; color: #1a1a1a;'>📱 Traga eletrônicos | ⭐ Ganhe pontos | 🎁 Troque por cupons</p>
     </div>""", unsafe_allow_html=True)
     
     try:
@@ -864,10 +898,10 @@ def home_screen():
             st.rerun()
 
 def cadastro_screen():
-    st.markdown("<h1>📝 Criar Conta</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 style='color: #1a1a1a;'>📝 Criar Conta</h1>", unsafe_allow_html=True)
     
     st.markdown("""<div class='card-info'>
-        <b>✨ Crie sua conta no EcoPlat!</b><br>
+        <b>✨ Crie sua conta no Eco Eletrônico!</b><br>
         Você precisará deste e-mail e senha para fazer login no futuro.
     </div>""", unsafe_allow_html=True)
     
@@ -885,7 +919,6 @@ def cadastro_screen():
             voltar = st.form_submit_button("🔙 Voltar", use_container_width=True)
     
     if submit:
-        # Validações
         if not nome.strip():
             st.error("❌ Nome é obrigatório!")
         elif turma == 'Selecione...':
@@ -917,7 +950,7 @@ def cadastro_screen():
         st.rerun()
 
 def login_screen():
-    st.markdown("<h1>🔑 Login</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 style='color: #1a1a1a;'>🔑 Login</h1>", unsafe_allow_html=True)
     
     st.markdown("""<div class='card-info'>
         <b>👋 Bem-vindo de volta!</b><br>
@@ -960,14 +993,13 @@ def login_screen():
         st.rerun()
 
 def recuperar_senha_screen():
-    st.markdown("<h1>🔑 Recuperar Senha</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 style='color: #1a1a1a;'>🔑 Recuperar Senha</h1>", unsafe_allow_html=True)
     
     if 'etapa_recuperacao' not in st.session_state:
         st.session_state.etapa_recuperacao = 1
         st.session_state.email_recuperacao = ""
         st.session_state.codigo_recuperacao = ""
     
-    # ETAPA 1: Solicitar código
     if st.session_state.etapa_recuperacao == 1:
         st.markdown("""<div class='card-info'>
             <b>📧 Digite seu e-mail cadastrado</b><br>
@@ -1005,7 +1037,6 @@ def recuperar_senha_screen():
             st.session_state.etapa_recuperacao = 1
             st.rerun()
     
-    # ETAPA 2: Resetar senha
     elif st.session_state.etapa_recuperacao == 2:
         st.markdown(f"""<div class='card-info'>
             <b>🔐 Digite o código recebido</b><br>
@@ -1053,12 +1084,11 @@ def recuperar_senha_screen():
             st.rerun()
 
 def consentimento_lgpd_screen():
-    """Tela de consentimento LGPD - Primeira vez do usuário"""
-    st.markdown("<h1>🌍 Bem-vindo ao EcoPlat!</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 style='color: #1a1a1a;'>🌍 Bem-vindo ao Eco Eletrônico!</h1>", unsafe_allow_html=True)
     
     st.markdown("""
-    <div style='background: linear-gradient(135deg, #667eea, #764ba2); color: white; 
-                padding: 30px; border-radius: 15px; margin: 20px 0;'>
+    <div style='background: linear-gradient(135deg, #1a1a1a, #2d2d2d); color: white; 
+                padding: 30px; border-radius: 15px; margin: 20px 0; border: 3px solid #22c55e;'>
         <h2 style='text-align: center;'>📊 Consentimento para Análise de Dados (LGPD)</h2>
     </div>
     """, unsafe_allow_html=True)
@@ -1076,10 +1106,10 @@ def consentimento_lgpd_screen():
     
     with col1:
         st.markdown("""
-        <div style='background: #d4edda; border: 2px solid #28a745; padding: 20px; 
+        <div style='background: #f0fdf4; border-left: 5px solid #22c55e; color: #1a1a1a; padding: 20px; 
                     border-radius: 10px; margin: 15px 0; min-height: 300px;'>
-            <h3 style='color: #155724;'>✅ O que COLETAMOS:</h3>
-            <ul style='color: #155724; font-size: 1.05em; line-height: 1.8;'>
+            <h3 style='color: #166534;'>✅ O que COLETAMOS:</h3>
+            <ul style='color: #1a1a1a; font-size: 1.05em; line-height: 1.8;'>
                 <li>📊 Categorias de eletrônicos descartados</li>
                 <li>♻️ Tipos de materiais mais procurados</li>
                 <li>📈 Frequência de descarte</li>
@@ -1091,10 +1121,10 @@ def consentimento_lgpd_screen():
     
     with col2:
         st.markdown("""
-        <div style='background: #f8d7da; border: 2px solid #dc3545; padding: 20px; 
+        <div style='background: #fee2e2; border-left: 5px solid #ef4444; color: #1a1a1a; padding: 20px; 
                     border-radius: 10px; margin: 15px 0; min-height: 300px;'>
-            <h3 style='color: #721c24;'>❌ O que NÃO COLETAMOS:</h3>
-            <ul style='color: #721c24; font-size: 1.05em; line-height: 1.8;'>
+            <h3 style='color: #991b1b;'>❌ O que NÃO COLETAMOS:</h3>
+            <ul style='color: #1a1a1a; font-size: 1.05em; line-height: 1.8;'>
                 <li>🚫 Nome, e-mail ou dados pessoais</li>
                 <li>🚫 Localização precisa</li>
                 <li>🚫 Informações identificáveis</li>
@@ -1105,7 +1135,7 @@ def consentimento_lgpd_screen():
         """, unsafe_allow_html=True)
     
     st.markdown("""
-    <div style='background: linear-gradient(135deg, #11998e, #38ef7d); color: white; 
+    <div style='background: linear-gradient(135deg, #22c55e, #16a34a); color: white; 
                 padding: 25px; border-radius: 15px; margin: 20px 0;'>
         <h3>🎯 Para que serve?</h3>
         <ul style='font-size: 1.1em; line-height: 1.8;'>
@@ -1119,10 +1149,10 @@ def consentimento_lgpd_screen():
     """, unsafe_allow_html=True)
     
     st.markdown("""
-    <div style='background: #d1ecf1; border: 2px solid #0c5460; padding: 20px; 
+    <div style='background: #ecfdf5; border-left: 5px solid #10b981; color: #1a1a1a; padding: 20px; 
                 border-radius: 10px; margin: 15px 0;'>
-        <h3 style='color: #0c5460;'>🔒 Privacidade Garantida:</h3>
-        <ul style='color: #0c5460; font-size: 1.05em; line-height: 1.8;'>
+        <h3 style='color: #065f46;'>🔒 Privacidade Garantida:</h3>
+        <ul style='color: #1a1a1a; font-size: 1.05em; line-height: 1.8;'>
             <li>✅ Dados 100% anônimos e agregados</li>
             <li>✅ Uso exclusivamente estatístico e educacional</li>
             <li>✅ Conformidade total com a LGPD (Lei Geral de Proteção de Dados)</li>
@@ -1136,8 +1166,8 @@ def consentimento_lgpd_screen():
     
     st.markdown("""
     <div style='text-align: center; padding: 20px;'>
-        <h2 style='color: #ffffff;'>Você autoriza a coleta anônima desses dados?</h2>
-        <p style='color: #ffffff; font-size: 1.1em;'>
+        <h2 style='color: #1a1a1a;'>Você autoriza a coleta anônima desses dados?</h2>
+        <p style='color: #1a1a1a; font-size: 1.1em;'>
             <b>Sua escolha não afeta o uso do sistema!</b><br>
             Você pode continuar usando normalmente, independente da resposta.
         </p>
@@ -1172,11 +1202,11 @@ def consentimento_lgpd_screen():
             • Seus dados sejam protegidos
             • Você possa pedir a exclusão dos dados
             
-            No EcoPlat, levamos isso muito a sério! 🔒
+            No Eco Eletrônico, levamos isso muito a sério! 🔒
             """)
 
 def dashboard_screen():
-    st.markdown("<h1>♻️ Dashboard</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 style='color: #1a1a1a;'>♻️ Dashboard</h1>", unsafe_allow_html=True)
     st.session_state.user = buscar_usuario_por_id(st.session_state.user['id'])
     
     # Verificar consentimento LGPD
@@ -1227,7 +1257,7 @@ def dashboard_screen():
         st.info("Nenhum eletrônico cadastrado")
 
 def configuracoes_screen():
-    st.markdown("<h1>⚙️ Configurações</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 style='color: #1a1a1a;'>⚙️ Configurações</h1>", unsafe_allow_html=True)
     
     user = st.session_state.user
     
@@ -1240,8 +1270,6 @@ def configuracoes_screen():
     </div>""", unsafe_allow_html=True)
     
     st.markdown("---")
-    
-    # Gerenciar Consentimento LGPD
     st.markdown("### 📊 Privacidade e Dados (LGPD)")
     
     consentimento_atual = verificar_consentimento(user['id'])
@@ -1276,7 +1304,6 @@ def configuracoes_screen():
             st.rerun()
     
     st.markdown("---")
-    
     st.markdown("### 🔒 Alterar Senha")
     
     with st.form("form_alterar_senha"):
@@ -1310,17 +1337,17 @@ def configuracoes_screen():
         st.rerun()
 
 def cadastrar_eletro_screen():
-    st.markdown("<h1>♻️ Cadastrar Eletrônico</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 style='color: #1a1a1a;'>♻️ Cadastrar Eletrônico</h1>", unsafe_allow_html=True)
     
     # Mostrar preview de impacto se houver
     if 'preview_impacto' in st.session_state and st.session_state.preview_impacto:
-        # Renderizar impacto diretamente (função não retorna HTML mais)
-        formatar_impacto_ambiental(st.session_state.preview_impacto)
+        impacto_html = formatar_impacto_ambiental(st.session_state.preview_impacto)
         
-        st.markdown("---")  # Linha separadora
-        
-        if st.button("✅ Confirmar Cadastro", use_container_width=True, type="primary"):
-                # Finalizar cadastro
+        if impacto_html:
+            st.markdown(impacto_html, unsafe_allow_html=True)
+            st.markdown("---")
+            
+            if st.button("✅ Confirmar Cadastro", use_container_width=True, type="primary"):
                 pts = st.session_state.preview_pts
                 numero = f"DSC-{int(datetime.now().timestamp() * 1000)}"
                 
@@ -1335,7 +1362,6 @@ def cadastrar_eletro_screen():
                         st.session_state.preview_customizado
                     )
                     
-                    # Registrar no Big Data se consentimento dado
                     consentimento = verificar_consentimento(st.session_state.user['id'])
                     if consentimento and IMPACTO_DISPONIVEL:
                         impacto_data = st.session_state.preview_impacto.copy()
@@ -1349,7 +1375,6 @@ def cadastrar_eletro_screen():
                 st.success(f"✅ {pts} pts cadastrados! (aguardando aprovação)")
                 st.balloons()
                 
-                # Limpar preview
                 st.session_state.preview_impacto = None
                 st.session_state.screen = 'dashboard'
                 st.rerun()
@@ -1369,14 +1394,12 @@ def cadastrar_eletro_screen():
         material_sel = st.selectbox("Material", opcoes,
             format_func=lambda x: f"{x} ({materiais.get(x, '?')}pts)" if x != '📝 Outro' else x)
         
-        # Inicializar variáveis
         material_final = None
         pontos_final = 0
         
         if material_sel == '📝 Outro':
             material_custom = st.text_input("Digite o material:")
             
-            # Identificação inteligente
             if material_custom and IDENTIFICADOR_DISPONIVEL:
                 resultado = identificar_material(material_custom)
                 tipo, html = formatar_resultado_identificacao(resultado)
@@ -1384,14 +1407,12 @@ def cadastrar_eletro_screen():
                 st.markdown(html, unsafe_allow_html=True)
                 
                 if resultado['identificado']:
-                    # Material identificado automaticamente!
                     st.success(f"✅ Identificamos automaticamente como: **{resultado['material']}**")
                     
                     col_id1, col_id2 = st.columns(2)
                     
                     with col_id1:
                         if st.button("✅ Usar material identificado", use_container_width=True, key="btn_usar_id"):
-                            # Buscar o material identificado nos materiais cadastrados
                             material_encontrado = False
                             for linha_cat, mats in MATERIAIS.items():
                                 if resultado['material'] in mats:
@@ -1415,7 +1436,6 @@ def cadastrar_eletro_screen():
                             st.session_state.material_escolhido = material_custom
                             st.session_state.pontos_escolhido = None
                     
-                    # Usar valores do session_state se existirem
                     if 'material_escolhido' in st.session_state:
                         material_final = st.session_state.material_escolhido
                         if 'pontos_escolhido' in st.session_state and st.session_state.pontos_escolhido:
@@ -1427,7 +1447,6 @@ def cadastrar_eletro_screen():
                         pontos_final = st.number_input("Pontos sugeridos:", min_value=0.5, max_value=5.0, value=2.0, step=0.5, key="pontos_id2")
                 
                 elif resultado['sugestoes']:
-                    # Mostrar sugestões
                     st.info("💡 Selecione uma das sugestões ou continue com sua descrição:")
                     
                     opcoes_sugestoes = [s['material'] for s in resultado['sugestoes']]
@@ -1439,9 +1458,7 @@ def cadastrar_eletro_screen():
                         material_final = material_custom
                         pontos_final = st.number_input("Pontos sugeridos:", min_value=0.5, max_value=5.0, value=2.0, step=0.5, key="pontos_custom_desc")
                     else:
-                        # Usar sugestão selecionada
                         material_final = escolha
-                        # Buscar pontos do material sugerido
                         encontrado = False
                         for linha_cat, mats in MATERIAIS.items():
                             if escolha in mats:
@@ -1454,27 +1471,22 @@ def cadastrar_eletro_screen():
                             pontos_final = st.number_input("Pontos sugeridos:", min_value=0.5, max_value=5.0, value=2.0, step=0.5, key="pontos_custom_sug")
                 
                 else:
-                    # Não identificado - continuar com descrição
                     material_final = material_custom
                     pontos_final = st.number_input("Pontos sugeridos:", min_value=0.5, max_value=5.0, value=2.0, step=0.5, key="pontos_custom_nao_id")
                     st.info("✅ Seu material será registrado como: **Material Não Identificado** e aprovado normalmente!")
             
             elif material_custom:
-                # Sem identificador ou campo vazio - modo normal
                 material_final = material_custom
                 pontos_final = st.number_input("Pontos sugeridos:", min_value=0.5, max_value=5.0, value=2.0, step=0.5, key="pontos_custom_simples")
             else:
-                # Campo vazio
                 material_final = ""
                 pontos_final = 0
         else:
-            # Material da lista oficial
             material_final = material_sel
             pontos_final = materiais[material_sel]
         
         qtd = st.number_input("Quantidade", min_value=1, value=1)
         
-        # Preview do impacto (só se material_final estiver definido)
         if material_final and material_final.strip() and IMPACTO_DISPONIVEL:
             impacto_preview = calcular_impacto_total(material_final, qtd)
             if impacto_preview:
@@ -1489,10 +1501,8 @@ def cadastrar_eletro_screen():
                 if material_final and material_final.strip():
                     pts = pontos_final * qtd
                     
-                    # Calcular impacto
                     impacto = calcular_impacto_total(material_final, qtd) if IMPACTO_DISPONIVEL else None
                     
-                    # Salvar no session_state para preview
                     st.session_state.preview_impacto = impacto
                     st.session_state.preview_pts = pts
                     st.session_state.preview_linha = linha
@@ -1501,7 +1511,6 @@ def cadastrar_eletro_screen():
                     st.session_state.preview_customizado = (material_sel == '📝 Outro')
                     
                     if not impacto:
-                        # Se não há impacto, cadastrar direto
                         numero = f"DSC-{int(datetime.now().timestamp() * 1000)}"
                         with st.spinner("💾 Salvando no Firestore..."):
                             criar_descarte(st.session_state.user['id'], numero, linha,
@@ -1520,10 +1529,9 @@ def cadastrar_eletro_screen():
             st.rerun()
 
 def cupons_screen():
-    st.markdown("<h1>♻️ Cupons</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 style='color: #1a1a1a;'>♻️ Cupons</h1>", unsafe_allow_html=True)
     st.session_state.user = buscar_usuario_por_id(st.session_state.user['id'])
     
-    # Obter trimestre atual
     trimestre_atual = get_trimestre_atual()
     
     st.info(f"📅 **Trimestre Atual: {trimestre_atual}º**")
@@ -1535,7 +1543,6 @@ def cupons_screen():
     
     categorias_trimestre = categorias_compradas.get(str(trimestre_atual), [])
     
-    # Avisar quantos cupons já foram comprados
     total_categorias = len(CATEGORIAS)
     comprados = len(categorias_trimestre)
     
@@ -1550,13 +1557,11 @@ def cupons_screen():
         for cupom in cupons:
             col1, col2 = st.columns([3, 1])
             with col1:
-                # Indicar se já foi comprado
                 if cat_nome in categorias_trimestre:
                     st.markdown(f"<div class='card-ok'><b>{cupom['nome']}</b> - {cupom['pontos']} pts ✅ <b>Comprado</b></div>", unsafe_allow_html=True)
                 else:
                     st.markdown(f"<div class='card-wait'><b>{cupom['nome']}</b> - {cupom['pontos']} pts</div>", unsafe_allow_html=True)
             with col2:
-                # Verificar se já comprou neste trimestre
                 pode = cat_nome not in categorias_trimestre
                 
                 if st.button("Comprar", key=f"c_{cat_nome}_{cupom['nome']}", 
@@ -1577,7 +1582,7 @@ def cupons_screen():
         st.rerun()
 
 def resgates_screen():
-    st.markdown("<h1>♻️ Meus Cupons</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 style='color: #1a1a1a;'>♻️ Meus Cupons</h1>", unsafe_allow_html=True)
     resgates = [r for r in load_resgates() if r['usuarioId'] == st.session_state.user['id']]
     
     if resgates:
@@ -1600,7 +1605,7 @@ def resgates_screen():
         st.rerun()
 
 def admin_login_screen():
-    st.markdown("<h1>🔒 Admin</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 style='color: #1a1a1a;'>🔒 Admin</h1>", unsafe_allow_html=True)
     senha = st.text_input("Senha", type="password")
     col1, col2 = st.columns(2)
     with col1:
@@ -1616,7 +1621,7 @@ def admin_login_screen():
             st.rerun()
 
 def admin_screen():
-    st.markdown("<h1>⚙️ Painel Admin</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 style='color: #1a1a1a;'>⚙️ Painel Admin</h1>", unsafe_allow_html=True)
     
     if st.button("🚪 Sair"):
         st.session_state.screen = 'home'
@@ -1626,7 +1631,6 @@ def admin_screen():
     descartes = load_descartes()
     resgates = load_resgates()
     
-    # CONTROLE DE TRIMESTRE
     st.markdown("### 📅 Controle de Trimestre")
     trimestre_atual = get_trimestre_atual()
     
@@ -1636,11 +1640,8 @@ def admin_screen():
     with col2:
         if st.button("🔄 Ativar 1º Trimestre", use_container_width=True):
             if trimestre_atual != 1:
-                # Salvar snapshot do trimestre atual
                 salvar_snapshot_trimestre(trimestre_atual, usuarios, descartes)
-                # Resetar pontuação
                 resetar_pontuacao_usuarios()
-                # Mudar trimestre
                 set_trimestre_atual(1)
                 st.success("✅ 1º Trimestre ativado! Pontuação resetada!")
                 st.rerun()
@@ -1649,11 +1650,8 @@ def admin_screen():
     with col3:
         if st.button("🔄 Ativar 2º Trimestre", use_container_width=True):
             if trimestre_atual != 2:
-                # Salvar snapshot do trimestre atual
                 salvar_snapshot_trimestre(trimestre_atual, usuarios, descartes)
-                # Resetar pontuação
                 resetar_pontuacao_usuarios()
-                # Mudar trimestre
                 set_trimestre_atual(2)
                 st.success("✅ 2º Trimestre ativado! Pontuação resetada!")
                 st.rerun()
@@ -1662,11 +1660,8 @@ def admin_screen():
     with col4:
         if st.button("🔄 Ativar 3º Trimestre", use_container_width=True):
             if trimestre_atual != 3:
-                # Salvar snapshot do trimestre atual
                 salvar_snapshot_trimestre(trimestre_atual, usuarios, descartes)
-                # Resetar pontuação
                 resetar_pontuacao_usuarios()
-                # Mudar trimestre
                 set_trimestre_atual(3)
                 st.success("✅ 3º Trimestre ativado! Pontuação resetada!")
                 st.rerun()
@@ -1676,195 +1671,6 @@ def admin_screen():
     st.warning("⚠️ **ATENÇÃO:** Ao trocar de trimestre, a pontuação de TODOS os alunos será resetada para 0! O ranking atual será salvo no histórico.")
     
     st.markdown("---")
-    
-    # HISTÓRICO DE TRIMESTRES
-    st.markdown("### 📚 Histórico de Trimestres Anteriores")
-    
-    historicos = get_todos_historicos()
-    
-    if historicos:
-        for hist in historicos:
-            with st.expander(f"📊 {hist['trimestre']}º Trimestre - Encerrado em {hist['dataFechamento']}"):
-                st.markdown(f"""
-                **Estatísticas:**
-                - 👥 Total de alunos: {hist['totalAlunos']}
-                - 📱 Total de descartes: {hist['totalDescartes']}
-                - ✅ Descartes aprovados: {hist['totalAprovados']}
-                """)
-                
-                st.markdown("#### 🏆 Ranking do Trimestre:")
-                
-                for i, aluno in enumerate(hist['ranking'][:20], 1):
-                    if i == 1:
-                        medal = "🥇"
-                    elif i == 2:
-                        medal = "🥈"
-                    elif i == 3:
-                        medal = "🥉"
-                    else:
-                        medal = f"**{i}º**"
-                    
-                    st.markdown(f"""<div class='card-ok'>
-                        {medal} <b>{aluno['nome']}</b> ({aluno['turma']})<br>
-                        💎 Pontos: {aluno['pontos']:.1f} | 📱 Descartes: {aluno['descartesAprovados']}
-                    </div>""", unsafe_allow_html=True)
-                
-                if len(hist['ranking']) > 20:
-                    with st.expander(f"Ver todos os {len(hist['ranking'])} alunos"):
-                        for i, aluno in enumerate(hist['ranking'][20:], 21):
-                            st.markdown(f"""<div class='card-wait'>
-                                <b>{i}º - {aluno['nome']}</b> ({aluno['turma']})<br>
-                                💎 Pontos: {aluno['pontos']:.1f} | 📱 Descartes: {aluno['descartesAprovados']}
-                            </div>""", unsafe_allow_html=True)
-                
-                # Botão para exportar histórico
-                backup_hist = json.dumps(hist, ensure_ascii=False, indent=2)
-                st.download_button(
-                    f"📥 Exportar {hist['trimestre']}º Trimestre",
-                    backup_hist,
-                    f"trimestre_{hist['trimestre']}_{datetime.now().strftime('%Y%m%d')}.json",
-                    "application/json"
-                )
-    else:
-        st.info("Nenhum histórico de trimestre anterior ainda.")
-    
-    st.markdown("---")
-    
-    # DASHBOARD DE IMPACTO AMBIENTAL (BIG DATA)
-    if IMPACTO_DISPONIVEL:
-        st.markdown("### 🌍 IMPACTO AMBIENTAL TOTAL DO PROGRAMA")
-        
-        stats = get_estatisticas_big_data()
-        
-        if stats:
-            # Métricas principais
-            col1, col2, col3, col4 = st.columns(4)
-            with col1:
-                st.markdown(f"""<div class='stat-card'>
-                    <p>Eletrônicos</p>
-                    <h1>{stats['total_eventos']}</h1>
-                </div>""", unsafe_allow_html=True)
-            with col2:
-                st.markdown(f"""<div class='stat-card' style='background: linear-gradient(135deg, #11998e, #38ef7d);'>
-                    <p>CO₂ Evitado</p>
-                    <h1>{stats['total_co2_kg']:.0f}</h1>
-                    <p>kg</p>
-                </div>""", unsafe_allow_html=True)
-            with col3:
-                st.markdown(f"""<div class='stat-card' style='background: linear-gradient(135deg, #ee0979, #ff6a00);'>
-                    <p>Energia</p>
-                    <h1>{stats['total_energia_kwh']:.0f}</h1>
-                    <p>kWh</p>
-                </div>""", unsafe_allow_html=True)
-            with col4:
-                st.markdown(f"""<div class='stat-card' style='background: linear-gradient(135deg, #2193b0, #6dd5ed);'>
-                    <p>Água</p>
-                    <h1>{stats['total_agua_litros']:.0f}</h1>
-                    <p>litros</p>
-                </div>""", unsafe_allow_html=True)
-            
-            # Metais pesados evitados
-            st.markdown("""
-            <div style='background: linear-gradient(135deg, #ee0979, #ff6a00); 
-                        color: white; padding: 25px; border-radius: 15px; margin: 20px 0;'>
-                <h3>☠️ METAIS PESADOS EVITADOS NO MEIO AMBIENTE</h3>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            col1, col2, col3, col4 = st.columns(4)
-            with col1:
-                st.markdown(f"""<div class='card-ok' style='text-align: center;'>
-                    <h2 style='color: #155724;'>🔋 CHUMBO</h2>
-                    <h1 style='font-size: 2.5em;'>{stats['total_chumbo_kg']:.2f}</h1>
-                    <p><b>kg</b></p>
-                    <p style='font-size: 0.9em;'>Contamina solo por 300 anos!</p>
-                </div>""", unsafe_allow_html=True)
-            with col2:
-                st.markdown(f"""<div class='card-ok' style='text-align: center;'>
-                    <h2 style='color: #155724;'>☢️ MERCÚRIO</h2>
-                    <h1 style='font-size: 2.5em;'>{stats['total_mercurio_kg']:.3f}</h1>
-                    <p><b>kg</b></p>
-                    <p style='font-size: 0.9em;'>Altamente tóxico!</p>
-                </div>""", unsafe_allow_html=True)
-            with col3:
-                st.markdown(f"""<div class='card-ok' style='text-align: center;'>
-                    <h2 style='color: #155724;'>⚠️ CÁDMIO</h2>
-                    <h1 style='font-size: 2.5em;'>{stats['total_cadmio_kg']:.2f}</h1>
-                    <p><b>kg</b></p>
-                    <p style='font-size: 0.9em;'>Causa problemas respiratórios!</p>
-                </div>""", unsafe_allow_html=True)
-            with col4:
-                st.markdown(f"""<div class='card-ok' style='text-align: center;'>
-                    <h2 style='color: #155724;'>🔩 NÍQUEL</h2>
-                    <h1 style='font-size: 2.5em;'>{stats['total_niquel_kg']:.2f}</h1>
-                    <p><b>kg</b></p>
-                    <p style='font-size: 0.9em;'>Alergênico e tóxico!</p>
-                </div>""", unsafe_allow_html=True)
-            
-            # Top materiais
-            st.markdown("### 📈 Top 10 Materiais Mais Descartados")
-            
-            if stats['materiais_mais_descartados']:
-                for i, (material, qtd) in enumerate(stats['materiais_mais_descartados'][:10], 1):
-                    if i <= 3:
-                        card_class = 'card-ok'
-                        icon = "🥇" if i == 1 else ("🥈" if i == 2 else "🥉")
-                    else:
-                        card_class = 'card-wait'
-                        icon = f"**{i}º**"
-                    
-                    st.markdown(f"""<div class='{card_class}'>
-                        {icon} <b>{material}</b>: {qtd} unidades
-                    </div>""", unsafe_allow_html=True)
-            
-            # Equivalências interessantes
-            st.markdown("""
-            <div style='background: linear-gradient(135deg, #11998e, #38ef7d); 
-                        color: white; padding: 25px; border-radius: 15px; margin: 20px 0;'>
-                <h3>🌳 EQUIVALÊNCIAS AMBIENTAIS</h3>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            # Calcular equivalências
-            arvores_plantadas = stats['total_co2_kg'] / 15  # 1 árvore absorve ~15kg CO2/ano
-            carros_fora = stats['total_co2_kg'] / 4600  # 1 carro emite ~4600kg CO2/ano
-            casas_energia = stats['total_energia_kwh'] / 8760  # 1 casa consome ~8760 kWh/ano
-            
-            col1, col2, col3 = st.columns(3)
-            with col1:
-                st.markdown(f"""<div class='card-info' style='text-align: center;'>
-                    <h2>🌳</h2>
-                    <h1 style='font-size: 2.5em;'>{arvores_plantadas:.0f}</h1>
-                    <p><b>Equivale a plantar árvores</b></p>
-                </div>""", unsafe_allow_html=True)
-            with col2:
-                st.markdown(f"""<div class='card-info' style='text-align: center;'>
-                    <h2>🚗</h2>
-                    <h1 style='font-size: 2.5em;'>{carros_fora:.1f}</h1>
-                    <p><b>Carros fora de circulação por 1 ano</b></p>
-                </div>""", unsafe_allow_html=True)
-            with col3:
-                st.markdown(f"""<div class='card-info' style='text-align: center;'>
-                    <h2>🏠</h2>
-                    <h1 style='font-size: 2.5em;'>{casas_energia:.1f}</h1>
-                    <p><b>Casas abastecidas por 1 ano</b></p>
-                </div>""", unsafe_allow_html=True)
-            
-            # Botão de exportação
-            if st.button("📥 Exportar Relatório de Impacto Ambiental (JSON)", use_container_width=True):
-                relatorio = json.dumps(stats, ensure_ascii=False, indent=2)
-                st.download_button(
-                    "💾 Download Relatório",
-                    relatorio,
-                    f"relatorio_impacto_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
-                    "application/json"
-                )
-        else:
-            st.info("📊 Ainda não há dados de impacto ambiental coletados. Aguarde os primeiros descartes!")
-    
-    st.markdown("---")
-    
-    # ESTATÍSTICAS GERAIS (TRIMESTRE ATUAL)
     st.markdown(f"### 📊 Estatísticas do {trimestre_atual}º Trimestre (Atual)")
     
     col1, col2, col3, col4 = st.columns(4)
@@ -1880,18 +1686,13 @@ def admin_screen():
         st.markdown(f"<div class='stat-card'><p>Cupons Pend.</p><h1>{pend}</h1></div>", unsafe_allow_html=True)
     
     st.markdown("---")
-    
-    # RANKING ATUAL
     st.markdown(f"### 🏆 Ranking Atual do {trimestre_atual}º Trimestre")
     
-    # Ordenar usuários por pontos
     usuarios_ordenados = sorted(usuarios, key=lambda x: x.get('pontos', 0), reverse=True)
     
-    # Exibir top 20
     for i, user in enumerate(usuarios_ordenados[:20], 1):
         descartes_user = len([d for d in descartes if d['usuarioId'] == user['id'] and d['status'] == 'Aprovado'])
         
-        # Medalhas para top 3
         if i == 1:
             medal = "🥇"
         elif i == 2:
@@ -1906,41 +1707,7 @@ def admin_screen():
             💎 Pontos: {user['pontos']:.1f} | 📱 Descartes aprovados: {descartes_user}
         </div>""", unsafe_allow_html=True)
     
-    if len(usuarios_ordenados) > 20:
-        with st.expander(f"📋 Ver todos os {len(usuarios_ordenados)} alunos"):
-            for i, user in enumerate(usuarios_ordenados[20:], 21):
-                descartes_user = len([d for d in descartes if d['usuarioId'] == user['id'] and d['status'] == 'Aprovado'])
-                st.markdown(f"""<div class='card-wait'>
-                    <b>{i}º - {user['nome']}</b> ({user['turma']}) | 📧 {user.get('email', 'N/A')}<br>
-                    💎 Pontos: {user['pontos']:.1f} | 📱 Descartes: {descartes_user}
-                </div>""", unsafe_allow_html=True)
-    
     st.markdown("---")
-    
-    # LISTA DE USUÁRIOS
-    st.markdown("### 👥 Lista de Todos os Usuários")
-    
-    with st.expander("📋 Ver todos os usuários cadastrados"):
-        for user in usuarios:
-            ativo_badge = "✅ Ativo" if user.get('ativo', True) else "❌ Inativo"
-            st.markdown(f"""<div class='card-info'>
-                <b>{user['nome']}</b> ({user['turma']})<br>
-                📧 {user.get('email', 'N/A')} | 💎 {user['pontos']:.1f} pts<br>
-                📅 {user.get('dataCadastro', 'N/A')} | {ativo_badge}
-            </div>""", unsafe_allow_html=True)
-    
-    st.markdown("---")
-    
-    # BACKUP
-    st.markdown("### 💾 Backup Geral")
-    if st.button("📥 Exportar Todos os Dados (JSON)", use_container_width=True):
-        backup = exportar_backup()
-        st.download_button("💾 Download Backup Completo", backup,
-            f"backup_completo_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json", "application/json")
-    
-    st.markdown("---")
-    
-    # DESCARTES PENDENTES
     st.markdown("### ⏳ Descartes Pendentes")
     descartes_pend = [d for d in descartes if d['status'] == 'Pendente']
     
@@ -1966,8 +1733,6 @@ def admin_screen():
         st.info("Nenhum descarte pendente")
     
     st.markdown("---")
-    
-    # CUPONS PENDENTES
     st.markdown("### 🎫 Cupons Pendentes")
     cupons_pend = [r for r in resgates if r['status'] == 'Pendente']
     
