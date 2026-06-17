@@ -1,6 +1,8 @@
-# main.py - Eco Eletrônico COM ENVIO DE EMAIL
-# Recuperação de senha com código enviado por email
-# Copie como main.py após colocar email_service.py no mesmo diretório
+# main.py - Eco Eletrônico COMPLETO
+# Com: FIRESTORE + AUTENTICAÇÃO + IMPACTO AMBIENTAL + LGPD + BIG DATA
+# Paleta: Preto (base) + Branco (secundária) + Verde (destaque)
+# Requisitos: pip install streamlit firebase-admin bcrypt
+# Rode: streamlit run main.py
 
 import streamlit as st
 from datetime import datetime
@@ -10,11 +12,6 @@ import re
 import bcrypt
 import firebase_admin
 from firebase_admin import credentials, firestore
-
-# ========================================
-# IMPORTAR EMAIL SERVICE
-# ========================================
-from email_service import enviar_codigo_recuperacao, enviar_confirmacao_senha_alterada
 
 # Importar base de dados de impacto ambiental
 try:
@@ -177,14 +174,7 @@ def alterar_senha(user_id, senha_atual, senha_nova):
     
     novo_hash = hash_senha(senha_nova)
     user_ref.update({'senha': novo_hash})
-    
-    # Enviar email de confirmação
-    enviar_confirmacao_senha_alterada(
-        user_data.get('email', ''),
-        user_data.get('nome', 'Usuário')
-    )
-    
-    return True, "✅ Senha alterada com sucesso! Verifique seu email."
+    return True, "Senha alterada com sucesso"
 
 def recuperar_senha(email):
     if not db or not validar_email(email):
@@ -197,7 +187,6 @@ def recuperar_senha(email):
     if not results:
         return None, "E-mail não encontrado"
     
-    user_data = results[0].to_dict()
     codigo = f"{random.randint(100000, 999999)}"
     user_doc = results[0]
     user_doc.reference.update({
@@ -205,17 +194,7 @@ def recuperar_senha(email):
         'codigoExpiracao': datetime.now().timestamp() + 900
     })
     
-    # Enviar email com código
-    sucesso, msg = enviar_codigo_recuperacao(
-        email.lower(),
-        codigo,
-        user_data.get('nome', 'Usuário')
-    )
-    
-    if sucesso:
-        return codigo, msg
-    else:
-        return codigo, f"⚠️ {msg}\n\n**Código de fallback:** {codigo}"
+    return codigo, f"Código de recuperação gerado (em produção seria enviado por e-mail)"
 
 def resetar_senha_com_codigo(email, codigo, senha_nova):
     if not db:
@@ -248,14 +227,7 @@ def resetar_senha_com_codigo(email, codigo, senha_nova):
         'codigoRecuperacao': firestore.DELETE_FIELD,
         'codigoExpiracao': firestore.DELETE_FIELD
     })
-    
-    # Enviar email de confirmação
-    enviar_confirmacao_senha_alterada(
-        email.lower(),
-        user_data.get('nome', 'Usuário')
-    )
-    
-    return True, "✅ Senha resetada com sucesso! Verifique seu email."
+    return True, "Senha resetada com sucesso"
 
 # ========================================
 # FUNÇÕES DE CONSENTIMENTO LGPD E BIG DATA
@@ -538,6 +510,15 @@ def atualizar_status_resgate(resgate_id, status):
         return
     db.collection('resgates').document(str(resgate_id)).update({'status': status})
 
+def exportar_backup():
+    backup = {
+        'usuarios': load_usuarios(),
+        'descartes': load_descartes(),
+        'resgates': load_resgates(),
+        'data': datetime.now().strftime('%d/%m/%Y %H:%M:%S')
+    }
+    return json.dumps(backup, ensure_ascii=False, indent=2)
+
 # ========================================
 # CONFIGURAÇÃO STREAMLIT
 # ========================================
@@ -550,7 +531,12 @@ st.set_page_config(page_title="Eco Eletrônico", page_icon="♻️", layout="wid
 
 st.markdown("""
 <style>
-    .stApp { background: #1a1a1a; }
+    /* Fundo - Preto */
+    .stApp {
+        background: #1a1a1a;
+    }
+    
+    /* Card de estatísticas - Preto com destaque verde */
     .stat-card {
         background: linear-gradient(135deg, #2d2d2d, #1a1a1a);
         color: #ffffff;
@@ -560,23 +546,76 @@ st.markdown("""
         margin: 10px 0;
         border: 3px solid #22c55e;
     }
-    .stat-card h1 { font-size: 3em; margin: 10px 0; color: #22c55e; }
-    .stat-card p { font-size: 1.2em; opacity: 0.9; color: #ffffff; }
-    .card-ok { background: #22c55e; color: #1a1a1a; padding: 15px; border-radius: 8px; margin: 8px 0; font-weight: bold; }
-    .card-wait { background: #3a3a3a; color: #ffffff; padding: 15px; border-radius: 8px; margin: 8px 0; border-left: 3px solid #22c55e; }
-    .card-info { background: #ffffff; color: #1a1a1a; padding: 15px; border-radius: 8px; margin: 8px 0; border-left: 3px solid #22c55e; }
-    h1, h2, h3 { color: #ffffff; }
-    p, label { color: #ffffff; }
-    .stMarkdown { color: #ffffff; }
+    
+    .stat-card h1 {
+        font-size: 3em;
+        margin: 10px 0;
+        color: #22c55e;
+    }
+    
+    .stat-card p {
+        font-size: 1.2em;
+        opacity: 0.9;
+        color: #ffffff;
+    }
+    
+    /* Card aprovado - Verde destaque */
+    .card-ok {
+        background: #22c55e;
+        color: #1a1a1a;
+        padding: 15px;
+        border-radius: 8px;
+        margin: 8px 0;
+        font-weight: bold;
+    }
+    
+    /* Card pendente - Cinza escuro */
+    .card-wait {
+        background: #3a3a3a;
+        color: #ffffff;
+        padding: 15px;
+        border-radius: 8px;
+        margin: 8px 0;
+        border-left: 3px solid #22c55e;
+    }
+    
+    /* Card informativo - Branco */
+    .card-info {
+        background: #ffffff;
+        color: #1a1a1a;
+        padding: 15px;
+        border-radius: 8px;
+        margin: 8px 0;
+        border-left: 3px solid #22c55e;
+    }
+    
+    /* Títulos - Branco */
+    h1, h2, h3 {
+        color: #ffffff;
+    }
+    
+    /* Texto geral - Branco */
+    p, label {
+        color: #ffffff;
+    }
+    
+    .stMarkdown {
+        color: #ffffff;
+    }
+    
+    /* Inputs - Preto com borda verde */
     .stTextInput input, .stSelectbox select, .stNumberInput input {
         background-color: #2d2d2d;
         color: #ffffff;
         border: 2px solid #22c55e;
     }
+    
     .stTextInput input:focus, .stSelectbox select:focus, .stNumberInput input:focus {
         border: 2px solid #22c55e;
         background-color: #3a3a3a;
     }
+    
+    /* Botões - Verde destaque */
     .stButton button {
         background: #22c55e;
         color: #1a1a1a;
@@ -585,10 +624,13 @@ st.markdown("""
         padding: 10px 20px;
         font-weight: bold;
     }
+    
     .stButton button:hover {
         background: #16a34a;
         transform: scale(1.02);
     }
+    
+    /* Formulários - Preto escuro */
     .stForm {
         background: #2d2d2d;
         padding: 20px;
@@ -596,12 +638,41 @@ st.markdown("""
         margin: 10px 0;
         border: 2px solid #22c55e;
     }
-    .stSuccess { background-color: #22c55e !important; color: #1a1a1a !important; border-radius: 8px; }
-    .stError { background-color: #dc2626 !important; color: #ffffff !important; border-radius: 8px; }
-    .stWarning { background-color: #f59e0b !important; color: #1a1a1a !important; border-radius: 8px; }
-    .stInfo { background-color: #3a3a3a !important; color: #ffffff !important; border: 2px solid #22c55e !important; border-radius: 8px; }
-    .stSidebar { background: #1a1a1a; }
-    .stSidebar label, .stSidebar p { color: #ffffff; }
+    
+    /* Mensagens */
+    .stSuccess {
+        background-color: #22c55e !important;
+        color: #1a1a1a !important;
+        border-radius: 8px;
+    }
+    
+    .stError {
+        background-color: #dc2626 !important;
+        color: #ffffff !important;
+        border-radius: 8px;
+    }
+    
+    .stWarning {
+        background-color: #f59e0b !important;
+        color: #1a1a1a !important;
+        border-radius: 8px;
+    }
+    
+    .stInfo {
+        background-color: #3a3a3a !important;
+        color: #ffffff !important;
+        border: 2px solid #22c55e !important;
+        border-radius: 8px;
+    }
+    
+    /* Sidebar - Preto */
+    .stSidebar {
+        background: #1a1a1a;
+    }
+    
+    .stSidebar label, .stSidebar p {
+        color: #ffffff;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -776,7 +847,7 @@ def recuperar_senha_screen():
     if st.session_state.etapa_recuperacao == 1:
         st.markdown("""<div class='card-info'>
             <b>📧 Digite seu e-mail cadastrado</b><br>
-            Você receberá um código por email para resetar sua senha.
+            Você receberá um código para resetar sua senha.
         </div>""", unsafe_allow_html=True)
         
         with st.form("form_solicitar_codigo"):
@@ -792,7 +863,7 @@ def recuperar_senha_screen():
             if not email.strip():
                 st.error("❌ Digite seu e-mail!")
             else:
-                with st.spinner("📨 Gerando e enviando código..."):
+                with st.spinner("📨 Gerando código..."):
                     codigo, mensagem = recuperar_senha(email)
                     
                     if codigo:
@@ -800,7 +871,7 @@ def recuperar_senha_screen():
                         st.session_state.codigo_recuperacao = codigo
                         st.session_state.etapa_recuperacao = 2
                         st.success(f"✅ {mensagem}")
-                        st.info("⏰ **Código válido por 15 minutos**")
+                        st.info(f"**Código:** {codigo} (válido por 15 minutos)")
                         st.rerun()
                     else:
                         st.error(f"❌ {mensagem}")
@@ -812,14 +883,14 @@ def recuperar_senha_screen():
     
     elif st.session_state.etapa_recuperacao == 2:
         st.markdown(f"""<div class='card-info'>
-            <b>🔐 Digite o código recebido no seu email</b><br>
+            <b>🔐 Digite o código recebido</b><br>
             E-mail: {st.session_state.email_recuperacao}
         </div>""", unsafe_allow_html=True)
         
-        st.info("📧 Verifique seu email (incluindo spam) para o código de 6 dígitos")
+        st.info(f"**Seu código:** {st.session_state.codigo_recuperacao}")
         
         with st.form("form_resetar_senha"):
-            codigo = st.text_input("🔢 Código de Recuperação (6 dígitos)")
+            codigo = st.text_input("🔢 Código de Recuperação")
             senha_nova = st.text_input("🔒 Nova Senha (mínimo 6 caracteres)", type="password")
             senha_conf = st.text_input("🔒 Confirme a Nova Senha", type="password")
             
