@@ -1,5 +1,6 @@
-# main.py - Eco Eletrônico COM TURMAS ATUALIZADAS
-# Turmas: 601-607, 701-707, 801-808, 901-906
+# main.py - Eco Eletrônico VERSÃO COMPLETA COM ADMIN
+# Turmas atualizadas: 601-607, 701-707, 801-808, 901-906
+# Admin com: Trimestres, Ranking, Descartes, Cupons
 
 import streamlit as st
 from datetime import datetime
@@ -18,7 +19,6 @@ from email.mime.multipart import MIMEMultipart
 # ========================================
 
 def get_email_config():
-    """Obtém configurações de email dos secrets"""
     try:
         if "email" in st.secrets:
             return {
@@ -28,11 +28,10 @@ def get_email_config():
                 'smtp_port': 587
             }
         return None
-    except Exception as e:
+    except:
         return None
 
 def enviar_codigo_recuperacao(email_destinatario, codigo, nome_usuario=""):
-    """Envia email com código de recuperação de senha"""
     config = get_email_config()
     if not config:
         return False, "⚠️ Email não configurado. Use código: " + codigo
@@ -45,57 +44,11 @@ def enviar_codigo_recuperacao(email_destinatario, codigo, nome_usuario=""):
         
         html = f"""
         <html>
-            <head>
-                <style>
-                    body {{ font-family: Arial, sans-serif; background: #f5f5f5; }}
-                    .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
-                    .header {{ background: linear-gradient(135deg, #1a1a1a, #2d2d2d); color: white; padding: 30px; border-radius: 10px 10px 0 0; text-align: center; }}
-                    .content {{ background: white; padding: 30px; border-radius: 0 0 10px 10px; }}
-                    .codigo {{ background: #22c55e; color: #1a1a1a; padding: 20px; border-radius: 10px; font-size: 28px; font-weight: bold; text-align: center; margin: 20px 0; letter-spacing: 5px; }}
-                    .aviso {{ background: #fff3cd; color: #856404; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ffc107; }}
-                    .footer {{ text-align: center; color: #666; font-size: 12px; margin-top: 30px; }}
-                    h1 {{ color: #22c55e; margin: 0; }}
-                    p {{ color: #333; line-height: 1.6; }}
-                </style>
-            </head>
-            <body>
-                <div class="container">
-                    <div class="header">
-                        <h1>♻️ Eco Eletrônico</h1>
-                        <p>Recuperação de Senha</p>
-                    </div>
-                    <div class="content">
-                        <p>Olá <b>{nome_usuario if nome_usuario else 'Usuário'}</b>,</p>
-                        
-                        <p>Você solicitou a recuperação de senha no <b>Eco Eletrônico</b>.</p>
-                        
-                        <p>Use o código abaixo para redefinir sua senha:</p>
-                        
-                        <div class="codigo">{codigo}</div>
-                        
-                        <div class="aviso">
-                            <strong>⏰ Atenção!</strong><br>
-                            Este código expira em <strong>15 minutos</strong>
-                        </div>
-                        
-                        <p><strong>Como usar:</strong></p>
-                        <ol>
-                            <li>Acesse o formulário de recuperação de senha</li>
-                            <li>Cole o código acima</li>
-                            <li>Digite sua nova senha</li>
-                            <li>Confirme a nova senha</li>
-                        </ol>
-                        
-                        <p style="color: #666; font-size: 13px; margin-top: 30px;">
-                            <strong>Não solicitou essa recuperação?</strong><br>
-                            Ignore este email. Sua conta está segura.
-                        </p>
-                    </div>
-                    <div class="footer">
-                        <p>© 2024 Eco Eletrônico - Plataforma de Sustentabilidade</p>
-                        <p>Este é um email automático, não responda.</p>
-                    </div>
-                </div>
+            <body style="font-family: Arial;">
+                <h1 style="color: #22c55e;">♻️ Eco Eletrônico</h1>
+                <p>Código: <b style="font-size: 24px;">{codigo}</b></p>
+                <p>Válido por 15 minutos</p>
+                <p>Não solicitou? Ignore este email.</p>
             </body>
         </html>
         """
@@ -108,61 +61,25 @@ def enviar_codigo_recuperacao(email_destinatario, codigo, nome_usuario=""):
             server.send_message(msg)
         
         return True, f"✅ Código enviado para {email_destinatario}"
-    
-    except Exception as e:
-        return False, f"⚠️ Erro ao enviar: {str(e)}"
+    except:
+        return False, f"⚠️ Erro ao enviar"
 
 def enviar_confirmacao_senha_alterada(email_destinatario, nome_usuario=""):
-    """Envia email de confirmação após alterar senha"""
     config = get_email_config()
     if not config:
         return False, "Email não configurado"
     
     try:
         msg = MIMEMultipart('alternative')
-        msg['Subject'] = "✅ Senha Alterada com Sucesso - Eco Eletrônico"
+        msg['Subject'] = "✅ Senha Alterada - Eco Eletrônico"
         msg['From'] = config['sender_email']
         msg['To'] = email_destinatario
         
         html = f"""
         <html>
-            <head>
-                <style>
-                    body {{ font-family: Arial, sans-serif; background: #f5f5f5; }}
-                    .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
-                    .header {{ background: linear-gradient(135deg, #22c55e, #16a34a); color: white; padding: 30px; border-radius: 10px 10px 0 0; text-align: center; }}
-                    .content {{ background: white; padding: 30px; border-radius: 0 0 10px 10px; }}
-                    .sucesso {{ background: #d4edda; color: #155724; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #28a745; }}
-                    .footer {{ text-align: center; color: #666; font-size: 12px; margin-top: 30px; }}
-                    h1 {{ color: #22c55e; margin: 0; }}
-                </style>
-            </head>
-            <body>
-                <div class="container">
-                    <div class="header">
-                        <h1>♻️ Eco Eletrônico</h1>
-                        <p>Confirmação de Alteração</p>
-                    </div>
-                    <div class="content">
-                        <p>Olá <b>{nome_usuario if nome_usuario else 'Usuário'}</b>,</p>
-                        
-                        <div class="sucesso">
-                            <strong>✅ Sua senha foi alterada com sucesso!</strong>
-                        </div>
-                        
-                        <p>Você agora pode fazer login no <b>Eco Eletrônico</b> com sua nova senha.</p>
-                        
-                        <p><strong>Informações da alteração:</strong></p>
-                        <ul>
-                            <li>Email: {email_destinatario}</li>
-                            <li>Data: {datetime.now().strftime('%d/%m/%Y às %H:%M')}</li>
-                            <li>Status: ✅ Alterada com sucesso</li>
-                        </ul>
-                    </div>
-                    <div class="footer">
-                        <p>© 2024 Eco Eletrônico - Plataforma de Sustentabilidade</p>
-                    </div>
-                </div>
+            <body style="font-family: Arial;">
+                <h1 style="color: #22c55e;">✅ Senha Alterada!</h1>
+                <p>Sua senha foi alterada com sucesso.</p>
             </body>
         </html>
         """
@@ -174,18 +91,16 @@ def enviar_confirmacao_senha_alterada(email_destinatario, nome_usuario=""):
             server.login(config['sender_email'], config['sender_password'])
             server.send_message(msg)
         
-        return True, "✅ Email de confirmação enviado"
-    
-    except Exception as e:
-        return False, f"Erro ao enviar confirmação"
+        return True, "Email enviado"
+    except:
+        return False, "Erro"
 
 # ========================================
-# CONFIGURAÇÃO DO FIRESTORE
+# FIREBASE
 # ========================================
 
 @st.cache_resource
 def init_firestore():
-    """Inicializa Firestore (funciona local E no Streamlit Cloud)"""
     if not firebase_admin._apps:
         try:
             if "firebase" in st.secrets:
@@ -207,7 +122,7 @@ def init_firestore():
 db = init_firestore()
 
 # ========================================
-# FUNÇÕES DE VALIDAÇÃO E SEGURANÇA
+# VALIDAÇÃO E SEGURANÇA
 # ========================================
 
 def validar_email(email):
@@ -216,8 +131,8 @@ def validar_email(email):
 
 def validar_senha(senha):
     if len(senha) < 6:
-        return False, "A senha deve ter no mínimo 6 caracteres"
-    return True, "Senha válida"
+        return False, "Mínimo 6 caracteres"
+    return True, "OK"
 
 def hash_senha(senha):
     return bcrypt.hashpw(senha.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
@@ -226,7 +141,7 @@ def verificar_senha(senha, hash_armazenado):
     return bcrypt.checkpw(senha.encode('utf-8'), hash_armazenado.encode('utf-8'))
 
 # ========================================
-# FUNÇÕES DE AUTENTICAÇÃO
+# AUTENTICAÇÃO
 # ========================================
 
 def email_existe(email):
@@ -239,18 +154,18 @@ def email_existe(email):
 
 def criar_usuario(nome, turma, email, senha):
     if not db:
-        return None, "Erro: Firestore não conectado"
+        return None, "Firestore desconectado"
     
     if not nome.strip():
-        return None, "Nome é obrigatório"
+        return None, "Nome obrigatório"
     if not validar_email(email):
-        return None, "E-mail inválido"
+        return None, "Email inválido"
     
     valido, msg = validar_senha(senha)
     if not valido:
         return None, msg
     if email_existe(email):
-        return None, "E-mail já cadastrado"
+        return None, "Email já cadastrado"
     
     user_id = int(datetime.now().timestamp() * 1000)
     senha_hash = hash_senha(senha)
@@ -270,7 +185,7 @@ def criar_usuario(nome, turma, email, senha):
     db.collection('usuarios').document(str(user_id)).set(dados)
     dados_retorno = dados.copy()
     del dados_retorno['senha']
-    return dados_retorno, "Usuário criado com sucesso"
+    return dados_retorno, "Conta criada!"
 
 def buscar_usuario(email, senha):
     if not db or not validar_email(email):
@@ -293,7 +208,7 @@ def buscar_usuario(email, senha):
     if 'dataCadastro' in user_data and hasattr(user_data['dataCadastro'], 'strftime'):
         user_data['dataCadastro'] = user_data['dataCadastro'].strftime('%d/%m/%Y %H:%M')
     
-    if 'categoriasCompradas' not in user_data or not isinstance(user_data['categoriasCompradas'], dict):
+    if 'categoriasCompradas' not in user_data:
         user_data['categoriasCompradas'] = {'1': [], '2': [], '3': []}
     
     if 'senha' in user_data:
@@ -303,13 +218,13 @@ def buscar_usuario(email, senha):
 
 def alterar_senha(user_id, senha_atual, senha_nova):
     if not db:
-        return False, "Erro: Firestore não conectado"
+        return False, "Firestore desconectado"
     
     user_ref = db.collection('usuarios').document(str(user_id))
     user_doc = user_ref.get()
     
     if not user_doc.exists:
-        return False, "Usuário não encontrado"
+        return False, "Não encontrado"
     
     user_data = user_doc.to_dict()
     
@@ -323,23 +238,20 @@ def alterar_senha(user_id, senha_atual, senha_nova):
     novo_hash = hash_senha(senha_nova)
     user_ref.update({'senha': novo_hash})
     
-    enviar_confirmacao_senha_alterada(
-        user_data.get('email', ''),
-        user_data.get('nome', 'Usuário')
-    )
+    enviar_confirmacao_senha_alterada(user_data.get('email', ''), user_data.get('nome', 'Usuário'))
     
-    return True, "✅ Senha alterada com sucesso! Verifique seu email."
+    return True, "✅ Senha alterada!"
 
 def recuperar_senha(email):
     if not db or not validar_email(email):
-        return None, "E-mail inválido"
+        return None, "Email inválido"
     
     usuarios_ref = db.collection('usuarios')
     query = usuarios_ref.where('email', '==', email.lower()).limit(1)
     results = list(query.stream())
     
     if not results:
-        return None, "E-mail não encontrado"
+        return None, "Email não encontrado"
     
     user_data = results[0].to_dict()
     codigo = f"{random.randint(100000, 999999)}"
@@ -349,37 +261,33 @@ def recuperar_senha(email):
         'codigoExpiracao': datetime.now().timestamp() + 900
     })
     
-    sucesso, msg = enviar_codigo_recuperacao(
-        email.lower(),
-        codigo,
-        user_data.get('nome', 'Usuário')
-    )
+    sucesso, msg = enviar_codigo_recuperacao(email.lower(), codigo, user_data.get('nome', 'Usuário'))
     
     if sucesso:
         return codigo, msg
     else:
-        return codigo, f"⚠️ {msg}\n\n**Código de fallback:** {codigo}"
+        return codigo, f"⚠️ {msg}"
 
 def resetar_senha_com_codigo(email, codigo, senha_nova):
     if not db:
-        return False, "Erro: Firestore não conectado"
+        return False, "Firestore desconectado"
     
     usuarios_ref = db.collection('usuarios')
     query = usuarios_ref.where('email', '==', email.lower()).limit(1)
     results = list(query.stream())
     
     if not results:
-        return False, "E-mail não encontrado"
+        return False, "Email não encontrado"
     
     user_data = results[0].to_dict()
     user_ref = results[0].reference
     
     if 'codigoRecuperacao' not in user_data:
-        return False, "Nenhum código de recuperação solicitado"
+        return False, "Sem código"
     if user_data['codigoRecuperacao'] != codigo:
         return False, "Código incorreto"
     if datetime.now().timestamp() > user_data.get('codigoExpiracao', 0):
-        return False, "Código expirado. Solicite um novo código"
+        return False, "Código expirado"
     
     valido, msg = validar_senha(senha_nova)
     if not valido:
@@ -392,15 +300,12 @@ def resetar_senha_com_codigo(email, codigo, senha_nova):
         'codigoExpiracao': firestore.DELETE_FIELD
     })
     
-    enviar_confirmacao_senha_alterada(
-        email.lower(),
-        user_data.get('nome', 'Usuário')
-    )
+    enviar_confirmacao_senha_alterada(email.lower(), user_data.get('nome', 'Usuário'))
     
-    return True, "✅ Senha resetada com sucesso! Verifique seu email."
+    return True, "✅ Senha resetada!"
 
 # ========================================
-# FUNÇÕES DE BANCO DE DADOS (FIRESTORE)
+# BANCO DE DADOS
 # ========================================
 
 def buscar_usuario_por_id(user_id):
@@ -413,7 +318,7 @@ def buscar_usuario_por_id(user_id):
         data = user_doc.to_dict()
         if 'dataCadastro' in data and hasattr(data['dataCadastro'], 'strftime'):
             data['dataCadastro'] = data['dataCadastro'].strftime('%d/%m/%Y %H:%M')
-        if 'categoriasCompradas' not in data or not isinstance(data['categoriasCompradas'], dict):
+        if 'categoriasCompradas' not in data:
             data['categoriasCompradas'] = {'1': [], '2': [], '3': []}
         if 'senha' in data:
             del data['senha']
@@ -429,7 +334,7 @@ def load_usuarios():
         data = doc.to_dict()
         if 'dataCadastro' in data and hasattr(data['dataCadastro'], 'strftime'):
             data['dataCadastro'] = data['dataCadastro'].strftime('%d/%m/%Y %H:%M')
-        if 'categoriasCompradas' not in data or not isinstance(data['categoriasCompradas'], dict):
+        if 'categoriasCompradas' not in data:
             data['categoriasCompradas'] = {'1': [], '2': [], '3': []}
         if 'senha' in data:
             del data['senha']
@@ -479,6 +384,38 @@ def set_trimestre_atual(trimestre):
         return
     config_ref = db.collection('config').document('sistema')
     config_ref.set({'trimestreAtual': trimestre})
+
+def salvar_snapshot_trimestre(trimestre, usuarios, descartes):
+    if not db:
+        return
+    ranking = []
+    for user in usuarios:
+        descartes_user = len([d for d in descartes if d['usuarioId'] == user['id'] and d['status'] == 'Aprovado'])
+        ranking.append({
+            'nome': user['nome'],
+            'turma': user['turma'],
+            'email': user.get('email', 'N/A'),
+            'pontos': user['pontos'],
+            'descartesAprovados': descartes_user
+        })
+    ranking = sorted(ranking, key=lambda x: x['pontos'], reverse=True)
+    snapshot_ref = db.collection('historico_trimestres').document(f'trimestre_{trimestre}')
+    snapshot_ref.set({
+        'trimestre': trimestre,
+        'dataFechamento': datetime.now(),
+        'totalAlunos': len(usuarios),
+        'totalDescartes': len(descartes),
+        'totalAprovados': len([d for d in descartes if d['status'] == 'Aprovado']),
+        'ranking': ranking
+    })
+
+def resetar_pontuacao_usuarios():
+    if not db:
+        return
+    usuarios_ref = db.collection('usuarios')
+    docs = usuarios_ref.stream()
+    for doc in docs:
+        doc.reference.update({'pontos': 0.0})
 
 def criar_descarte(usuario_id, numero, linha, material, quantidade, pontos, customizado=False):
     if not db:
@@ -549,7 +486,7 @@ def atualizar_status_resgate(resgate_id, status):
     db.collection('resgates').document(str(resgate_id)).update({'status': status})
 
 # ========================================
-# CONFIGURAÇÃO STREAMLIT
+# CONFIG STREAMLIT
 # ========================================
 
 st.set_page_config(page_title="Eco Eletrônico", page_icon="♻️", layout="wide")
@@ -573,45 +510,11 @@ st.markdown("""
     .card-info { background: #ffffff; color: #1a1a1a; padding: 15px; border-radius: 8px; margin: 8px 0; border-left: 3px solid #22c55e; }
     h1, h2, h3 { color: #ffffff; }
     p, label { color: #ffffff; }
-    .stMarkdown { color: #ffffff; }
-    .stTextInput input, .stSelectbox select, .stNumberInput input {
-        background-color: #2d2d2d;
-        color: #ffffff;
-        border: 2px solid #22c55e;
-    }
-    .stTextInput input:focus, .stSelectbox select:focus, .stNumberInput input:focus {
-        border: 2px solid #22c55e;
-        background-color: #3a3a3a;
-    }
-    .stButton button {
-        background: #22c55e;
-        color: #1a1a1a;
-        border: none;
-        border-radius: 8px;
-        padding: 10px 20px;
-        font-weight: bold;
-    }
-    .stButton button:hover {
-        background: #16a34a;
-        transform: scale(1.02);
-    }
-    .stForm {
-        background: #2d2d2d;
-        padding: 20px;
-        border-radius: 10px;
-        margin: 10px 0;
-        border: 2px solid #22c55e;
-    }
-    .stSuccess { background-color: #22c55e !important; color: #1a1a1a !important; border-radius: 8px; }
-    .stError { background-color: #dc2626 !important; color: #ffffff !important; border-radius: 8px; }
-    .stWarning { background-color: #f59e0b !important; color: #1a1a1a !important; border-radius: 8px; }
-    .stInfo { background-color: #3a3a3a !important; color: #ffffff !important; border: 2px solid #22c55e !important; border-radius: 8px; }
+    .stButton button { background: #22c55e; color: #1a1a1a; border: none; border-radius: 8px; padding: 10px 20px; font-weight: bold; }
+    .stButton button:hover { background: #16a34a; transform: scale(1.02); }
+    .stForm { background: #2d2d2d; padding: 20px; border-radius: 10px; margin: 10px 0; border: 2px solid #22c55e; }
 </style>
 """, unsafe_allow_html=True)
-
-# ========================================
-# TURMAS ATUALIZADAS
-# ========================================
 
 TURMAS = ['601', '602', '603', '604', '605', '606', '607',
           '701', '702', '703', '704', '705', '706', '707',
@@ -654,14 +557,13 @@ def home_screen():
     
     st.markdown("""<div style='text-align: center; padding: 40px;'>
         <h2 style='color: #ffffff;'>🔐 Sistema com Autenticação Segura!</h2>
-        <p style='font-size: 1.2em; color: #ffffff;'>📱 Traga eletrônicos | ⭐ Ganhe pontos | 🎁 Troque por cupons</p>
     </div>""", unsafe_allow_html=True)
     
     try:
         usuarios = load_usuarios()
-        st.success(f"✅ Firestore conectado! 👥 {len(usuarios)} alunos cadastrados")
-    except Exception as e:
-        st.warning(f"⚠️ Carregando...")
+        st.success(f"✅ Firestore OK! 👥 {len(usuarios)} alunos")
+    except:
+        st.warning("⚠️ Carregando...")
     
     col1, col2, col3 = st.columns(3)
     with col1:
@@ -680,17 +582,12 @@ def home_screen():
 def cadastro_screen():
     st.markdown("<h1 style='color: #22c55e;'>📝 Criar Conta</h1>", unsafe_allow_html=True)
     
-    st.markdown("""<div class='card-info'>
-        <b>✨ Crie sua conta no Eco Eletrônico!</b><br>
-        Você precisará deste e-mail e senha para fazer login no futuro.
-    </div>""", unsafe_allow_html=True)
-    
     with st.form("form_cadastro"):
-        nome = st.text_input("📛 Nome Completo", placeholder="Ex: João Silva")
+        nome = st.text_input("📛 Nome Completo")
         turma = st.selectbox("🎓 Turma", ['Selecione...'] + TURMAS)
-        email = st.text_input("📧 E-mail", placeholder="seu.email@exemplo.com")
-        senha = st.text_input("🔒 Senha (mínimo 6 caracteres)", type="password")
-        senha_conf = st.text_input("🔒 Confirme a Senha", type="password")
+        email = st.text_input("📧 E-mail")
+        senha = st.text_input("🔒 Senha (mínimo 6)", type="password")
+        senha_conf = st.text_input("🔒 Confirme", type="password")
         
         col1, col2 = st.columns(2)
         with col1:
@@ -700,30 +597,21 @@ def cadastro_screen():
     
     if submit:
         if not nome.strip():
-            st.error("❌ Nome é obrigatório!")
+            st.error("❌ Nome obrigatório!")
         elif turma == 'Selecione...':
             st.error("❌ Selecione uma turma!")
-        elif not email.strip():
-            st.error("❌ E-mail é obrigatório!")
-        elif not validar_email(email):
-            st.error("❌ E-mail inválido!")
-        elif not senha:
-            st.error("❌ Senha é obrigatória!")
         elif senha != senha_conf:
-            st.error("❌ As senhas não coincidem!")
+            st.error("❌ Senhas não coincidem!")
         else:
-            with st.spinner("💾 Criando conta..."):
-                usuario, mensagem = criar_usuario(nome, turma, email, senha)
-                
-                if usuario:
-                    st.success(f"✅ {mensagem}")
-                    st.session_state.user = usuario
-                    st.balloons()
-                    st.info("🎉 Conta criada! Redirecionando...")
-                    st.session_state.screen = 'dashboard'
-                    st.rerun()
-                else:
-                    st.error(f"❌ {mensagem}")
+            usuario, msg = criar_usuario(nome, turma, email, senha)
+            if usuario:
+                st.success(f"✅ {msg}")
+                st.session_state.user = usuario
+                st.balloons()
+                st.session_state.screen = 'dashboard'
+                st.rerun()
+            else:
+                st.error(f"❌ {msg}")
     
     if voltar:
         st.session_state.screen = 'home'
@@ -732,13 +620,8 @@ def cadastro_screen():
 def login_screen():
     st.markdown("<h1 style='color: #22c55e;'>🔑 Login</h1>", unsafe_allow_html=True)
     
-    st.markdown("""<div class='card-info'>
-        <b>👋 Bem-vindo de volta!</b><br>
-        Entre com seu e-mail e senha cadastrados.
-    </div>""", unsafe_allow_html=True)
-    
     with st.form("form_login"):
-        email = st.text_input("📧 E-mail", placeholder="seu.email@exemplo.com")
+        email = st.text_input("📧 E-mail")
         senha = st.text_input("🔒 Senha", type="password")
         
         col1, col2 = st.columns(2)
@@ -750,19 +633,14 @@ def login_screen():
         esqueci = st.form_submit_button("🔑 Esqueci minha senha")
     
     if submit:
-        if not email.strip() or not senha:
-            st.error("❌ Preencha e-mail e senha!")
+        usuario = buscar_usuario(email, senha)
+        if usuario:
+            st.success("✅ Login OK!")
+            st.session_state.user = usuario
+            st.session_state.screen = 'dashboard'
+            st.rerun()
         else:
-            with st.spinner("🔍 Verificando credenciais..."):
-                usuario = buscar_usuario(email, senha)
-                
-                if usuario:
-                    st.success("✅ Login realizado com sucesso!")
-                    st.session_state.user = usuario
-                    st.session_state.screen = 'dashboard'
-                    st.rerun()
-                else:
-                    st.error("❌ E-mail ou senha incorretos!")
+            st.error("❌ Credenciais inválidas!")
     
     if esqueci:
         st.session_state.screen = 'recuperar_senha'
@@ -778,16 +656,10 @@ def recuperar_senha_screen():
     if 'etapa_recuperacao' not in st.session_state:
         st.session_state.etapa_recuperacao = 1
         st.session_state.email_recuperacao = ""
-        st.session_state.codigo_recuperacao = ""
     
     if st.session_state.etapa_recuperacao == 1:
-        st.markdown("""<div class='card-info'>
-            <b>📧 Digite seu e-mail cadastrado</b><br>
-            Você receberá um código por email para resetar sua senha.
-        </div>""", unsafe_allow_html=True)
-        
-        with st.form("form_solicitar_codigo"):
-            email = st.text_input("📧 E-mail", placeholder="seu.email@exemplo.com")
+        with st.form("form_solicitar"):
+            email = st.text_input("📧 E-mail")
             
             col1, col2 = st.columns(2)
             with col1:
@@ -796,67 +668,49 @@ def recuperar_senha_screen():
                 voltar = st.form_submit_button("🔙 Voltar", use_container_width=True)
         
         if submit:
-            if not email.strip():
-                st.error("❌ Digite seu e-mail!")
+            if not email:
+                st.error("❌ Digite seu email!")
             else:
-                with st.spinner("📨 Gerando e enviando código..."):
-                    codigo, mensagem = recuperar_senha(email)
-                    
-                    if codigo:
-                        st.session_state.email_recuperacao = email
-                        st.session_state.codigo_recuperacao = codigo
-                        st.session_state.etapa_recuperacao = 2
-                        st.success(f"✅ {mensagem}")
-                        st.info("⏰ **Código válido por 15 minutos**")
-                        st.rerun()
-                    else:
-                        st.error(f"❌ {mensagem}")
+                codigo, mensagem = recuperar_senha(email)
+                if codigo:
+                    st.session_state.email_recuperacao = email
+                    st.session_state.etapa_recuperacao = 2
+                    st.success(f"✅ {mensagem}")
+                    st.rerun()
+                else:
+                    st.error(f"❌ {mensagem}")
         
         if voltar:
             st.session_state.screen = 'login'
-            st.session_state.etapa_recuperacao = 1
             st.rerun()
     
     elif st.session_state.etapa_recuperacao == 2:
-        st.markdown(f"""<div class='card-info'>
-            <b>🔐 Digite o código recebido no seu email</b><br>
-            E-mail: {st.session_state.email_recuperacao}
-        </div>""", unsafe_allow_html=True)
-        
-        st.info("📧 Verifique seu email (incluindo spam) para o código de 6 dígitos")
-        
-        with st.form("form_resetar_senha"):
-            codigo = st.text_input("🔢 Código de Recuperação (6 dígitos)")
-            senha_nova = st.text_input("🔒 Nova Senha (mínimo 6 caracteres)", type="password")
-            senha_conf = st.text_input("🔒 Confirme a Nova Senha", type="password")
+        with st.form("form_resetar"):
+            codigo = st.text_input("🔢 Código")
+            senha_nova = st.text_input("🔒 Nova Senha", type="password")
+            senha_conf = st.text_input("🔒 Confirme", type="password")
             
             col1, col2 = st.columns(2)
             with col1:
-                submit = st.form_submit_button("✅ Resetar Senha", use_container_width=True)
+                submit = st.form_submit_button("✅ Resetar", use_container_width=True)
             with col2:
                 cancelar = st.form_submit_button("❌ Cancelar", use_container_width=True)
         
         if submit:
             if not codigo or not senha_nova:
-                st.error("❌ Preencha todos os campos!")
+                st.error("❌ Preencha tudo!")
             elif senha_nova != senha_conf:
-                st.error("❌ As senhas não coincidem!")
+                st.error("❌ Senhas não coincidem!")
             else:
-                with st.spinner("🔄 Resetando senha..."):
-                    sucesso, mensagem = resetar_senha_com_codigo(
-                        st.session_state.email_recuperacao, 
-                        codigo, 
-                        senha_nova
-                    )
-                    
-                    if sucesso:
-                        st.success(f"✅ {mensagem}")
-                        st.balloons()
-                        st.session_state.etapa_recuperacao = 1
-                        st.session_state.screen = 'login'
-                        st.rerun()
-                    else:
-                        st.error(f"❌ {mensagem}")
+                sucesso, msg = resetar_senha_com_codigo(st.session_state.email_recuperacao, codigo, senha_nova)
+                if sucesso:
+                    st.success(f"✅ {msg}")
+                    st.balloons()
+                    st.session_state.etapa_recuperacao = 1
+                    st.session_state.screen = 'login'
+                    st.rerun()
+                else:
+                    st.error(f"❌ {msg}")
         
         if cancelar:
             st.session_state.etapa_recuperacao = 1
@@ -877,7 +731,7 @@ def dashboard_screen():
             st.session_state.screen = 'cupons'
             st.rerun()
     with col3:
-        if st.button("🎫 Meus Cupons", use_container_width=True):
+        if st.button("🎫 Meus", use_container_width=True):
             st.session_state.screen = 'resgates'
             st.rerun()
     with col4:
@@ -891,26 +745,24 @@ def dashboard_screen():
             st.rerun()
     
     st.markdown(f"## 👋 {st.session_state.user['nome']}")
-    st.markdown(f"<div class='stat-card'><p>Seus Pontos</p><h1>{st.session_state.user['pontos']:.1f}</h1></div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='stat-card'><p>Pontos</p><h1>{st.session_state.user['pontos']:.1f}</h1></div>", unsafe_allow_html=True)
 
 def configuracoes_screen():
     st.markdown("<h1 style='color: #22c55e;'>⚙️ Configurações</h1>", unsafe_allow_html=True)
     
     user = st.session_state.user
     st.markdown(f"""<div class='card-info'>
-        <b>👤 Informações da Conta</b><br>
-        📛 Nome: {user['nome']}<br>
-        🎓 Turma: {user['turma']}<br>
-        📧 E-mail: {user.get('email', 'N/A')}
+        <b>👤 Sua Conta</b><br>
+        📛 {user['nome']}<br>
+        🎓 {user['turma']}<br>
+        📧 {user.get('email', 'N/A')}
     </div>""", unsafe_allow_html=True)
     
-    st.markdown("---")
     st.markdown("### 🔒 Alterar Senha")
-    
-    with st.form("form_alterar_senha"):
-        senha_atual = st.text_input("🔐 Senha Atual", type="password")
-        senha_nova = st.text_input("🔒 Nova Senha", type="password")
-        senha_conf = st.text_input("🔒 Confirme", type="password")
+    with st.form("form_alterar"):
+        senha_atual = st.text_input("Atual", type="password")
+        senha_nova = st.text_input("Nova", type="password")
+        senha_conf = st.text_input("Confirme", type="password")
         
         col1, col2 = st.columns(2)
         with col1:
@@ -922,7 +774,7 @@ def configuracoes_screen():
         if not senha_atual or not senha_nova:
             st.error("❌ Preencha tudo!")
         elif senha_nova != senha_conf:
-            st.error("❌ Senhas não coincidem!")
+            st.error("❌ Não coincidem!")
         else:
             sucesso, msg = alterar_senha(user['id'], senha_atual, senha_nova)
             if sucesso:
@@ -938,28 +790,24 @@ def configuracoes_screen():
 def cupons_screen():
     st.markdown("<h1 style='color: #22c55e;'>🎁 Cupons</h1>", unsafe_allow_html=True)
     st.session_state.user = buscar_usuario_por_id(st.session_state.user['id'])
-    st.markdown(f"### Seus Pontos: {st.session_state.user['pontos']:.1f}")
+    st.markdown(f"### Pontos: {st.session_state.user['pontos']:.1f}")
     
     for cat_nome, cupons in CATEGORIAS.items():
-        st.markdown(f"### {cat_nome}")
+        st.markdown(f"**{cat_nome}**")
         for cupom in cupons:
             col1, col2 = st.columns([3, 1])
             with col1:
-                st.markdown(f"<div class='card-info'><b>{cupom['nome']}</b> - {cupom['pontos']} pts</div>", unsafe_allow_html=True)
+                st.markdown(f"<div class='card-info'>{cupom['nome']} - {cupom['pontos']} pts</div>", unsafe_allow_html=True)
             with col2:
                 if st.button("Comprar", key=f"c_{cat_nome}", use_container_width=True):
                     if st.session_state.user['pontos'] < cupom['pontos']:
-                        st.error("❌ Pontos insuficientes!")
+                        st.error("❌ Insuficientes!")
                     else:
                         atualizar_pontos(st.session_state.user['id'], -cupom['pontos'])
                         codigo = f"CUP-{random.randint(1000, 9999)}"
                         criar_resgate(st.session_state.user['id'], cat_nome, cupom['nome'], codigo, cupom['pontos'])
-                        st.success(f"✅ Cupom {codigo}!")
+                        st.success(f"✅ {codigo}!")
                         st.rerun()
-    
-    if st.button("🏠 Home", use_container_width=True):
-        st.session_state.screen = 'dashboard'
-        st.rerun()
 
 def resgates_screen():
     st.markdown("<h1 style='color: #22c55e;'>🎫 Meus Cupons</h1>", unsafe_allow_html=True)
@@ -967,9 +815,9 @@ def resgates_screen():
     
     if resgates:
         for r in resgates:
-            st.markdown(f"<div class='card-ok'><b>{r['categoria']}</b> - {r['codigo']}</div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='card-ok'>{r['categoria']} - {r['codigo']}</div>", unsafe_allow_html=True)
     else:
-        st.info("Nenhum cupom")
+        st.info("Nenhum")
     
     if st.button("Voltar", use_container_width=True):
         st.session_state.screen = 'dashboard'
@@ -981,13 +829,13 @@ def cadastrar_eletro_screen():
     linha = st.selectbox("Linha", ['Selecione...'] + list(MATERIAIS.keys()))
     if linha != 'Selecione...':
         materiais = MATERIAIS[linha]
-        material_sel = st.selectbox("Material", list(materiais.keys()))
-        qtd = st.number_input("Quantidade", min_value=1, value=1)
-        pts = materiais[material_sel] * qtd
+        material = st.selectbox("Material", list(materiais.keys()))
+        qtd = st.number_input("Qtd", min_value=1, value=1)
+        pts = materiais[material] * qtd
         
         if st.button("Cadastrar", use_container_width=True, type="primary"):
             numero = f"DSC-{int(datetime.now().timestamp() * 1000)}"
-            criar_descarte(st.session_state.user['id'], numero, linha, material_sel, qtd, pts)
+            criar_descarte(st.session_state.user['id'], numero, linha, material, qtd, pts)
             st.success(f"✅ {pts} pts!")
             st.session_state.screen = 'dashboard'
             st.rerun()
@@ -1021,8 +869,43 @@ def admin_screen():
     
     usuarios = load_usuarios()
     descartes = load_descartes()
+    resgates = load_resgates()
+    trimestre_atual = get_trimestre_atual()
     
-    col1, col2, col3 = st.columns(3)
+    st.markdown("### 📅 Controle de Trimestre")
+    
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        st.info(f"Trimestre: **{trimestre_atual}º**")
+    with col2:
+        if st.button("Ativar 1º", use_container_width=True):
+            if trimestre_atual != 1:
+                salvar_snapshot_trimestre(trimestre_atual, usuarios, descartes)
+                resetar_pontuacao_usuarios()
+                set_trimestre_atual(1)
+                st.success("✅ 1º ativado!")
+                st.rerun()
+    with col3:
+        if st.button("Ativar 2º", use_container_width=True):
+            if trimestre_atual != 2:
+                salvar_snapshot_trimestre(trimestre_atual, usuarios, descartes)
+                resetar_pontuacao_usuarios()
+                set_trimestre_atual(2)
+                st.success("✅ 2º ativado!")
+                st.rerun()
+    with col4:
+        if st.button("Ativar 3º", use_container_width=True):
+            if trimestre_atual != 3:
+                salvar_snapshot_trimestre(trimestre_atual, usuarios, descartes)
+                resetar_pontuacao_usuarios()
+                set_trimestre_atual(3)
+                st.success("✅ 3º ativado!")
+                st.rerun()
+    
+    st.markdown("---")
+    st.markdown(f"### 📊 Trimestre {trimestre_atual}")
+    
+    col1, col2, col3, col4 = st.columns(4)
     with col1:
         st.markdown(f"<div class='stat-card'><p>Usuários</p><h1>{len(usuarios)}</h1></div>", unsafe_allow_html=True)
     with col2:
@@ -1030,6 +913,80 @@ def admin_screen():
     with col3:
         aprovados = len([d for d in descartes if d['status'] == 'Aprovado'])
         st.markdown(f"<div class='stat-card'><p>Aprovados</p><h1>{aprovados}</h1></div>", unsafe_allow_html=True)
+    with col4:
+        pend = len([r for r in resgates if r['status'] == 'Pendente'])
+        st.markdown(f"<div class='stat-card'><p>Cupons Pend</p><h1>{pend}</h1></div>", unsafe_allow_html=True)
+    
+    st.markdown("---")
+    st.markdown(f"### 🏆 Ranking Top 20")
+    
+    usuarios_ordenados = sorted(usuarios, key=lambda x: x.get('pontos', 0), reverse=True)
+    
+    for i, user in enumerate(usuarios_ordenados[:20], 1):
+        descartes_user = len([d for d in descartes if d['usuarioId'] == user['id'] and d['status'] == 'Aprovado'])
+        
+        if i == 1:
+            medal = "🥇"
+        elif i == 2:
+            medal = "🥈"
+        elif i == 3:
+            medal = "🥉"
+        else:
+            medal = f"{i}º"
+        
+        st.markdown(f"""<div class='card-ok'>
+            {medal} <b>{user['nome']}</b> ({user['turma']}) | 💎 {user['pontos']:.1f} pts | 📱 {descartes_user}
+        </div>""", unsafe_allow_html=True)
+    
+    st.markdown("---")
+    st.markdown("### ⏳ Descartes Pendentes")
+    descartes_pend = [d for d in descartes if d['status'] == 'Pendente']
+    
+    if descartes_pend:
+        for d in descartes_pend[:10]:
+            user = next((u for u in usuarios if u['id'] == d['usuarioId']), None)
+            col1, col2, col3 = st.columns([4, 1, 1])
+            with col1:
+                st.markdown(f"""<div class='card-wait'>
+                    <b>{d['numero']}</b> | {user['nome'] if user else 'N/A'} ({user['turma'] if user else 'N/A'})<br>
+                    {d['material']} ({d['quantidade']} un) = {d['pontos']} pts
+                </div>""", unsafe_allow_html=True)
+            with col2:
+                if st.button("✅", key=f"a{d['id']}", use_container_width=True):
+                    atualizar_status_descarte(d['id'], 'Aprovado')
+                    atualizar_pontos(d['usuarioId'], d['pontos'])
+                    st.rerun()
+            with col3:
+                if st.button("❌", key=f"r{d['id']}", use_container_width=True):
+                    atualizar_status_descarte(d['id'], 'Recusado')
+                    st.rerun()
+    else:
+        st.info("Nenhum pendente")
+    
+    st.markdown("---")
+    st.markdown("### 🎫 Cupons Pendentes")
+    cupons_pend = [r for r in resgates if r['status'] == 'Pendente']
+    
+    if cupons_pend:
+        for r in cupons_pend[:10]:
+            user = next((u for u in usuarios if u['id'] == r['usuarioId']), None)
+            col1, col2, col3 = st.columns([3, 1, 1])
+            with col1:
+                st.markdown(f"""<div class='card-wait'>
+                    <b>{r['codigo']}</b> | {user['nome'] if user else 'N/A'}<br>
+                    {r['categoria']} - {r['cupom']}
+                </div>""", unsafe_allow_html=True)
+            with col2:
+                if st.button("✅", key=f"ac{r['id']}", use_container_width=True):
+                    atualizar_status_resgate(r['id'], 'Aprovado')
+                    st.rerun()
+            with col3:
+                if st.button("❌", key=f"rc{r['id']}", use_container_width=True):
+                    atualizar_status_resgate(r['id'], 'Recusado')
+                    atualizar_pontos(r['usuarioId'], r['pontos'])
+                    st.rerun()
+    else:
+        st.info("Nenhum pendente")
 
 # ========================================
 # MAIN
