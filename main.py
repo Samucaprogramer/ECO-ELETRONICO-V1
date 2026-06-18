@@ -1,6 +1,12 @@
-# main.py - Eco Eletrônico VERSÃO COMPLETA COM ADMIN
-# Turmas atualizadas: 601-607, 701-707, 801-808, 901-906
-# Admin com: Trimestres, Ranking, Descartes, Cupons
+cat > /mnt/user-data/outputs/main_final_completo.py << 'EOFMAIN'
+# main.py - ECO ELETRÔNICO - VERSÃO FINAL COMPLETA
+# ✅ Turmas atualizadas (601-607, 701-707, 801-808, 901-906)
+# ✅ Admin com todas as funções
+# ✅ Email integrado
+# ✅ Export de dados
+# ✅ Log de eventos com timestamp
+# ✅ Big Data anônimo
+# ✅ Botão voltar nos cupons
 
 import streamlit as st
 from datetime import datetime
@@ -13,6 +19,18 @@ from firebase_admin import credentials, firestore
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+
+# ========================================
+# IMPORTAR EXPORT DE DADOS
+# ========================================
+
+try:
+    from export_dados import registrar_evento, mostrar_painel_export
+    EXPORT_DISPONIVEL = True
+except ImportError:
+    EXPORT_DISPONIVEL = False
+    def registrar_evento(db, tipo, user_id, detalhes): pass
+    def mostrar_painel_export(db, usuarios, descartes, resgates): pass
 
 # ========================================
 # EMAIL SERVICE (INTEGRADO)
@@ -38,7 +56,7 @@ def enviar_codigo_recuperacao(email_destinatario, codigo, nome_usuario=""):
     
     try:
         msg = MIMEMultipart('alternative')
-        msg['Subject'] = "🔐 Código de Recuperação de Senha - Eco Eletrônico"
+        msg['Subject'] = "🔐 Código de Recuperação - Eco Eletrônico"
         msg['From'] = config['sender_email']
         msg['To'] = email_destinatario
         
@@ -48,7 +66,6 @@ def enviar_codigo_recuperacao(email_destinatario, codigo, nome_usuario=""):
                 <h1 style="color: #22c55e;">♻️ Eco Eletrônico</h1>
                 <p>Código: <b style="font-size: 24px;">{codigo}</b></p>
                 <p>Válido por 15 minutos</p>
-                <p>Não solicitou? Ignore este email.</p>
             </body>
         </html>
         """
@@ -179,10 +196,20 @@ def criar_usuario(nome, turma, email, senha):
         'pontos': 0.0,
         'categoriasCompradas': {'1': [], '2': [], '3': []},
         'dataCadastro': datetime.now(),
-        'ativo': True
+        'ativo': True,
+        'consentimento_lgpd': None
     }
     
     db.collection('usuarios').document(str(user_id)).set(dados)
+    
+    # Registrar evento
+    if EXPORT_DISPONIVEL:
+        registrar_evento(db, 'cadastro_usuario', user_id, {
+            'nome': nome,
+            'turma': turma,
+            'email': email
+        })
+    
     dados_retorno = dados.copy()
     del dados_retorno['senha']
     return dados_retorno, "Conta criada!"
@@ -237,6 +264,12 @@ def alterar_senha(user_id, senha_atual, senha_nova):
     
     novo_hash = hash_senha(senha_nova)
     user_ref.update({'senha': novo_hash})
+    
+    # Registrar evento
+    if EXPORT_DISPONIVEL:
+        registrar_evento(db, 'senha_alterada', user_id, {
+            'email': user_data.get('email', '')
+        })
     
     enviar_confirmacao_senha_alterada(user_data.get('email', ''), user_data.get('nome', 'Usuário'))
     
@@ -300,9 +333,39 @@ def resetar_senha_com_codigo(email, codigo, senha_nova):
         'codigoExpiracao': firestore.DELETE_FIELD
     })
     
+    # Registrar evento
+    if EXPORT_DISPONIVEL:
+        registrar_evento(db, 'senha_resetada', user_data.get('id'), {
+            'email': email
+        })
+    
     enviar_confirmacao_senha_alterada(email.lower(), user_data.get('nome', 'Usuário'))
     
     return True, "✅ Senha resetada!"
+
+# ========================================
+# BIG DATA ANÔNIMO
+# ========================================
+
+def registrar_big_data_anonimo(db, material, quantidade, categoria):
+    """Registra evento anônimo para análise de dados (não identifica usuário)"""
+    if not db:
+        return
+    
+    try:
+        evento_id = int(datetime.now().timestamp() * 1000)
+        dados = {
+            'id': evento_id,
+            'timestamp': datetime.now(),
+            'timestamp_str': datetime.now().strftime('%d/%m/%Y %H:%M:%S'),
+            'categoria': categoria,
+            'material': material,
+            'quantidade': quantidade,
+            'escola': 'FECTI'
+        }
+        db.collection('big_data_anonimo').document(str(evento_id)).set(dados)
+    except:
+        pass
 
 # ========================================
 # BANCO DE DADOS
@@ -434,6 +497,18 @@ def criar_descarte(usuario_id, numero, linha, material, quantidade, pontos, cust
         'data': datetime.now()
     }
     db.collection('descartes').document(str(descarte_id)).set(dados)
+    
+    # Registrar evento
+    if EXPORT_DISPONIVEL:
+        registrar_evento(db, 'descarte_cadastrado', usuario_id, {
+            'numero': numero,
+            'material': material,
+            'quantidade': quantidade,
+            'pontos': pontos
+        })
+    
+    # Big Data anônimo
+    registrar_big_data_anonimo(db, material, quantidade, linha)
 
 def load_descartes():
     if not db:
@@ -806,8 +881,23 @@ def cupons_screen():
                         atualizar_pontos(st.session_state.user['id'], -cupom['pontos'])
                         codigo = f"CUP-{random.randint(1000, 9999)}"
                         criar_resgate(st.session_state.user['id'], cat_nome, cupom['nome'], codigo, cupom['pontos'])
+                        
+                        # Registrar evento
+                        if EXPORT_DISPONIVEL:
+                            registrar_evento(db, 'cupom_resgatado', st.session_state.user['id'], {
+                                'categoria': cat_nome,
+                                'cupom': cupom['nome'],
+                                'codigo': codigo,
+                                'pontos': cupom['pontos']
+                            })
+                        
                         st.success(f"✅ {codigo}!")
                         st.rerun()
+    
+    st.markdown("---")
+    if st.button("🏠 Voltar ao Dashboard", use_container_width=True):
+        st.session_state.screen = 'dashboard'
+        st.rerun()
 
 def resgates_screen():
     st.markdown("<h1 style='color: #22c55e;'>🎫 Meus Cupons</h1>", unsafe_allow_html=True)
@@ -955,6 +1045,14 @@ def admin_screen():
                 if st.button("✅", key=f"a{d['id']}", use_container_width=True):
                     atualizar_status_descarte(d['id'], 'Aprovado')
                     atualizar_pontos(d['usuarioId'], d['pontos'])
+                    
+                    if EXPORT_DISPONIVEL:
+                        registrar_evento(db, 'descarte_aprovado', d['usuarioId'], {
+                            'descarte_id': d['id'],
+                            'material': d['material'],
+                            'pontos_adicionados': d['pontos']
+                        })
+                    
                     st.rerun()
             with col3:
                 if st.button("❌", key=f"r{d['id']}", use_container_width=True):
@@ -979,6 +1077,14 @@ def admin_screen():
             with col2:
                 if st.button("✅", key=f"ac{r['id']}", use_container_width=True):
                     atualizar_status_resgate(r['id'], 'Aprovado')
+                    
+                    if EXPORT_DISPONIVEL:
+                        registrar_evento(db, 'cupom_aprovado', r['usuarioId'], {
+                            'cupom_codigo': r['codigo'],
+                            'categoria': r['categoria'],
+                            'pontos': r['pontos']
+                        })
+                    
                     st.rerun()
             with col3:
                 if st.button("❌", key=f"rc{r['id']}", use_container_width=True):
@@ -987,6 +1093,16 @@ def admin_screen():
                     st.rerun()
     else:
         st.info("Nenhum pendente")
+    
+    # ========================================
+    # PAINEL DE EXPORT DE DADOS
+    # ========================================
+    
+    if EXPORT_DISPONIVEL:
+        mostrar_painel_export(db, usuarios, descartes, resgates)
+    else:
+        st.markdown("---")
+        st.warning("⚠️ Módulo de export não carregado. Coloque export_dados.py no mesmo diretório que main.py")
 
 # ========================================
 # MAIN
@@ -1031,3 +1147,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+EOFMAIN
