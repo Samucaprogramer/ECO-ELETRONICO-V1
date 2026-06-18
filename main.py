@@ -1,4 +1,4 @@
-cat > /mnt/user-data/outputs/main_final_completo.py << 'EOFMAIN'
+
 # main.py - ECO ELETRÔNICO - VERSÃO FINAL COMPLETA
 # ✅ Turmas atualizadas (601-607, 701-707, 801-808, 901-906)
 # ✅ Admin com todas as funções
